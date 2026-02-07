@@ -16,8 +16,8 @@ import {
   Dna,
   DollarSign,
   BarChart3,
+  HeartPulse,
   ChevronRight,
-  Search,
   BookOpen,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -42,7 +42,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { ARXIV_CATEGORIES } from "@/lib/arxiv-categories"
+import { ARXIV_ONLY, MEDRXIV_ONLY } from "@/lib/arxiv-categories"
 
 const iconMap: Record<string, LucideIcon> = {
   Monitor,
@@ -58,11 +58,60 @@ const iconMap: Record<string, LucideIcon> = {
   Dna,
   DollarSign,
   BarChart3,
+  HeartPulse,
 }
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   selectedCategory: string | null
   onSelectCategory: (code: string) => void
+}
+
+function CategoryGroup({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+}: {
+  categories: typeof ARXIV_ONLY
+  selectedCategory: string | null
+  onSelectCategory: (code: string) => void
+}) {
+  return (
+    <SidebarMenu>
+      {categories.map((cat) => {
+        const Icon = iconMap[cat.icon] || Monitor
+        return (
+          <Collapsible key={cat.code} asChild>
+            <SidebarMenuItem>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton tooltip={cat.name}>
+                  <Icon className="size-4" />
+                  <span>{cat.name}</span>
+                  <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarMenuSub>
+                  {cat.subcategories.map((sub) => (
+                    <SidebarMenuSubItem key={sub.code}>
+                      <SidebarMenuSubButton
+                        isActive={selectedCategory === sub.code}
+                        onClick={() => onSelectCategory(sub.code)}
+                      >
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {sub.code.replace("medrxiv.", "")}
+                        </span>
+                        <span className="truncate">{sub.name}</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              </CollapsibleContent>
+            </SidebarMenuItem>
+          </Collapsible>
+        )
+      })}
+    </SidebarMenu>
+  )
 }
 
 export function AppSidebar({ selectedCategory, onSelectCategory, ...props }: AppSidebarProps) {
@@ -80,45 +129,33 @@ export function AppSidebar({ selectedCategory, onSelectCategory, ...props }: App
         </div>
       </SidebarHeader>
       <SidebarContent>
+        {/* arXiv categories */}
         <SidebarGroup>
           <SidebarGroupLabel>
-            <Search className="mr-1 size-3" />
-            Categories
+            <BookOpen className="mr-1 size-3" />
+            arXiv
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {ARXIV_CATEGORIES.map((cat) => {
-                const Icon = iconMap[cat.icon] || Monitor
-                return (
-                  <Collapsible key={cat.code} asChild>
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={cat.name}>
-                          <Icon className="size-4" />
-                          <span>{cat.name}</span>
-                          <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {cat.subcategories.map((sub) => (
-                            <SidebarMenuSubItem key={sub.code}>
-                              <SidebarMenuSubButton
-                                isActive={selectedCategory === sub.code}
-                                onClick={() => onSelectCategory(sub.code)}
-                              >
-                                <span className="font-mono text-[10px] text-muted-foreground">{sub.code}</span>
-                                <span className="truncate">{sub.name}</span>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                )
-              })}
-            </SidebarMenu>
+            <CategoryGroup
+              categories={ARXIV_ONLY}
+              selectedCategory={selectedCategory}
+              onSelectCategory={onSelectCategory}
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* medRxiv categories */}
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            <HeartPulse className="mr-1 size-3" />
+            medRxiv
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <CategoryGroup
+              categories={MEDRXIV_ONLY}
+              selectedCategory={selectedCategory}
+              onSelectCategory={onSelectCategory}
+            />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

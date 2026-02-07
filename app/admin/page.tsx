@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import useSWR, { mutate } from "swr"
-import { Loader2, Play, CheckCircle, AlertCircle, RefreshCw, Shield, ArrowLeft } from "lucide-react"
+import { Loader2, Play, CheckCircle, AlertCircle, RefreshCw, Shield, ArrowLeft, Lock, HeartPulse, BookOpen } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
 import { ARXIV_CATEGORIES } from "@/lib/arxiv-categories"
 import Link from "next/link"
 
@@ -25,16 +26,29 @@ interface GenerationLog {
   category: string
   status: "pending" | "running" | "done" | "error"
   message?: string
-  paperCount?: number
-  analyzedCount?: number
-  sotaCount?: number
 }
 
 export default function AdminPage() {
-  const { data: statusData, isLoading: statusLoading } = useSWR("/api/admin/status", fetcher)
+  const [password, setPassword] = useState("")
+  const [authenticated, setAuthenticated] = useState(false)
+  const [authError, setAuthError] = useState(false)
+
+  const { data: statusData, isLoading: statusLoading } = useSWR(
+    authenticated ? "/api/admin/status" : null,
+    fetcher
+  )
   const [generationLogs, setGenerationLogs] = useState<GenerationLog[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [currentCategory, setCurrentCategory] = useState<string | null>(null)
+
+  const handleLogin = () => {
+    if (password === "Santander2728,2025*34erASsa35") {
+      setAuthenticated(true)
+      setAuthError(false)
+    } else {
+      setAuthError(true)
+    }
+  }
 
   const generatedMap = new Map<string, GeneratedCategory>()
   if (statusData?.categories) {
@@ -48,6 +62,7 @@ export default function AdminPage() {
       ...sub,
       parentName: cat.name,
       parentCode: cat.code,
+      source: cat.source,
     }))
   )
 
@@ -62,7 +77,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: categoryCode, maxResults: 100 }),
+        body: JSON.stringify({ category: categoryCode, maxResults: 100, password }),
       })
 
       if (!res.ok) {
@@ -79,9 +94,6 @@ export default function AdminPage() {
                 ...l,
                 status: "done",
                 message: `Done! ${result.paperCount} papers, ${result.analyzedCount} analyzed, ${result.sotaCount} SOTA`,
-                paperCount: result.paperCount,
-                analyzedCount: result.analyzedCount,
-                sotaCount: result.sotaCount,
               }
             : l
         )
@@ -99,7 +111,7 @@ export default function AdminPage() {
     }
 
     setCurrentCategory(null)
-  }, [])
+  }, [password])
 
   const generateMultiple = useCallback(
     async (categories: string[]) => {
@@ -111,6 +123,45 @@ export default function AdminPage() {
     },
     [generateCategory]
   )
+
+  // Password gate
+  if (!authenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-muted">
+              <Lock className="size-6 text-muted-foreground" />
+            </div>
+            <CardTitle>Admin Access</CardTitle>
+            <CardDescription>Enter the admin password to access the analysis generator.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setAuthError(false) }}
+              onKeyDown={(e) => { if (e.key === "Enter") handleLogin() }}
+            />
+            {authError && (
+              <p className="text-sm text-destructive">Incorrect password. Try again.</p>
+            )}
+            <Button className="w-full" onClick={handleLogin}>
+              <Shield className="mr-2 size-4" />
+              Access Admin Panel
+            </Button>
+            <Button variant="ghost" className="w-full" asChild>
+              <Link href="/">
+                <ArrowLeft className="mr-2 size-4" />
+                Back to Scanner
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const pendingCategories = allSubcategories
     .filter((sub) => !generatedMap.has(sub.code))
@@ -128,7 +179,7 @@ export default function AdminPage() {
             <Button variant="ghost" size="sm" asChild>
               <Link href="/">
                 <ArrowLeft className="mr-1 size-4" />
-                Back to Scanner
+                Back
               </Link>
             </Button>
             <div className="flex items-center gap-2">
@@ -153,13 +204,13 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl p-6 space-y-6">
+      <main className="mx-auto max-w-5xl space-y-6 p-6">
         {/* Progress Overview */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Generation Progress</CardTitle>
             <CardDescription>
-              {totalGenerated} of {totalCategories} categories generated
+              {totalGenerated} of {totalCategories} categories generated (arXiv + medRxiv)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -178,7 +229,7 @@ export default function AdminPage() {
                 ) : (
                   <>
                     <Play className="mr-2 size-4" />
-                    Generate All Pending ({pendingCategories.length})
+                    Generate All ({pendingCategories.length} pending)
                   </>
                 )}
               </Button>
@@ -202,7 +253,7 @@ export default function AdminPage() {
               <CardTitle className="text-base">Generation Log</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="max-h-48 space-y-2 overflow-y-auto">
                 {generationLogs.slice().reverse().map((log) => (
                   <div key={log.category} className="flex items-center gap-2 text-sm">
                     {log.status === "running" && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
@@ -221,7 +272,19 @@ export default function AdminPage() {
         {ARXIV_CATEGORIES.map((parentCat) => (
           <Card key={parentCat.code}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{parentCat.name}</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base">
+                {parentCat.source === "medrxiv" ? (
+                  <HeartPulse className="size-4 text-rose-500" />
+                ) : (
+                  <BookOpen className="size-4" />
+                )}
+                {parentCat.name}
+                {parentCat.source === "medrxiv" && (
+                  <Badge variant="outline" className="ml-1 text-[10px] border-rose-200 bg-rose-50 text-rose-700">
+                    medRxiv
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>
                 {parentCat.subcategories.filter((s) => generatedMap.has(s.code)).length} of{" "}
                 {parentCat.subcategories.length} subcategories generated
@@ -241,14 +304,16 @@ export default function AdminPage() {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{sub.code}</span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {sub.code.replace("medrxiv.", "")}
+                          </span>
                           {cached && (
-                            <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-emerald-300 bg-emerald-50 text-emerald-700">
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px] border-emerald-300 bg-emerald-50 text-emerald-700">
                               {cached.analyzedCount} analyzed
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm font-medium text-foreground truncate">{sub.name}</p>
+                        <p className="truncate text-sm font-medium text-foreground">{sub.name}</p>
                         {cached && (
                           <p className="text-[10px] text-muted-foreground">
                             {new Date(cached.generatedAt).toLocaleDateString()} - {cached.sotaCount} SOTA

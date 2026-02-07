@@ -8,6 +8,7 @@ export interface ArxivCategory {
   code: string
   name: string
   icon: string
+  source: "arxiv" | "medrxiv"
   subcategories: ArxivSubcategory[]
 }
 
@@ -16,6 +17,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "cs",
     name: "Computer Science",
     icon: "Monitor",
+    source: "arxiv",
     subcategories: [
       { code: "cs.AI", name: "Artificial Intelligence", description: "IA general, razonamiento y planificacion" },
       { code: "cs.AR", name: "Hardware Architecture", description: "Organizacion de sistemas y diseno de hardware" },
@@ -53,6 +55,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "econ",
     name: "Economics",
     icon: "TrendingUp",
+    source: "arxiv",
     subcategories: [
       { code: "econ.EM", name: "Econometrics", description: "Metodos econometricos y estadisticos" },
       { code: "econ.GN", name: "General Economics", description: "Economia general y topicos transversales" },
@@ -63,6 +66,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "eess",
     name: "Electrical Engineering",
     icon: "Zap",
+    source: "arxiv",
     subcategories: [
       { code: "eess.AS", name: "Audio and Speech Processing", description: "Procesamiento de audio y habla" },
       { code: "eess.IV", name: "Image and Video Processing", description: "Procesamiento de imagen y video" },
@@ -74,6 +78,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "math",
     name: "Mathematics",
     icon: "Sigma",
+    source: "arxiv",
     subcategories: [
       { code: "math.AC", name: "Commutative Algebra", description: "Algebra conmutativa" },
       { code: "math.AG", name: "Algebraic Geometry", description: "Geometria algebraica" },
@@ -113,6 +118,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "astro-ph",
     name: "Astrophysics",
     icon: "Star",
+    source: "arxiv",
     subcategories: [
       { code: "astro-ph.CO", name: "Cosmology", description: "Cosmologia y astrofisica extragalactica" },
       { code: "astro-ph.EP", name: "Earth and Planetary", description: "Astrofisica planetaria" },
@@ -126,6 +132,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "cond-mat",
     name: "Condensed Matter",
     icon: "Atom",
+    source: "arxiv",
     subcategories: [
       { code: "cond-mat.dis-nn", name: "Disordered Systems", description: "Sistemas desordenados y redes neuronales" },
       { code: "cond-mat.mes-hall", name: "Mesoscale", description: "Sistemas mesoscopicos y efecto Hall cuantico" },
@@ -142,6 +149,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "hep",
     name: "High Energy Physics",
     icon: "Orbit",
+    source: "arxiv",
     subcategories: [
       { code: "gr-qc", name: "General Relativity", description: "Relatividad general y cosmologia cuantica" },
       { code: "hep-ex", name: "HEP Experiment", description: "Fisica de altas energias experimental" },
@@ -156,6 +164,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "nlin",
     name: "Nonlinear Sciences",
     icon: "Waves",
+    source: "arxiv",
     subcategories: [
       { code: "nlin.AO", name: "Adaptation and Self-Organizing", description: "Adaptacion y auto-organizacion" },
       { code: "nlin.CD", name: "Chaotic Dynamics", description: "Dinamica caotica" },
@@ -168,6 +177,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "nucl",
     name: "Nuclear",
     icon: "CircleDot",
+    source: "arxiv",
     subcategories: [
       { code: "nucl-ex", name: "Nuclear Experiment", description: "Fisica nuclear experimental" },
       { code: "nucl-th", name: "Nuclear Theory", description: "Teoria nuclear" },
@@ -177,6 +187,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "physics",
     name: "Physics",
     icon: "FlaskConical",
+    source: "arxiv",
     subcategories: [
       { code: "physics.acc-ph", name: "Accelerator Physics", description: "Fisica de aceleradores" },
       { code: "physics.ao-ph", name: "Atmospheric and Oceanic", description: "Fisica atmosferica y oceanica" },
@@ -205,6 +216,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "q-bio",
     name: "Quantitative Biology",
     icon: "Dna",
+    source: "arxiv",
     subcategories: [
       { code: "q-bio.BM", name: "Biomolecules", description: "Biomoleculas" },
       { code: "q-bio.CB", name: "Cell Behavior", description: "Comportamiento celular" },
@@ -222,6 +234,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "q-fin",
     name: "Quantitative Finance",
     icon: "DollarSign",
+    source: "arxiv",
     subcategories: [
       { code: "q-fin.CP", name: "Computational Finance", description: "Finanzas computacionales" },
       { code: "q-fin.EC", name: "Economics", description: "Economia" },
@@ -238,6 +251,7 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
     code: "stat",
     name: "Statistics",
     icon: "BarChart3",
+    source: "arxiv",
     subcategories: [
       { code: "stat.AP", name: "Applications", description: "Aplicaciones estadisticas" },
       { code: "stat.CO", name: "Computation", description: "Estadistica computacional" },
@@ -247,4 +261,94 @@ export const ARXIV_CATEGORIES: ArxivCategory[] = [
       { code: "stat.TH", name: "Statistics Theory", description: "Teoria estadistica" },
     ],
   },
+  // ── medRxiv ──────────────────────────────────────
+  {
+    code: "medrxiv",
+    name: "medRxiv",
+    icon: "HeartPulse",
+    source: "medrxiv",
+    subcategories: [
+      { code: "medrxiv.addiction-medicine", name: "Addiction Medicine", description: "Medicina de las adicciones" },
+      { code: "medrxiv.allergy-and-immunology", name: "Allergy and Immunology", description: "Alergia e inmunologia" },
+      { code: "medrxiv.anesthesia", name: "Anesthesia", description: "Anestesia" },
+      { code: "medrxiv.cardiovascular-medicine", name: "Cardiovascular Medicine", description: "Medicina cardiovascular" },
+      { code: "medrxiv.dentistry-and-oral-medicine", name: "Dentistry and Oral Medicine", description: "Odontologia y medicina oral" },
+      { code: "medrxiv.dermatology", name: "Dermatology", description: "Dermatologia" },
+      { code: "medrxiv.emergency-medicine", name: "Emergency Medicine", description: "Medicina de emergencia" },
+      { code: "medrxiv.endocrinology", name: "Endocrinology", description: "Endocrinologia (incluye diabetes y enfermedades metabolicas)" },
+      { code: "medrxiv.epidemiology", name: "Epidemiology", description: "Epidemiologia" },
+      { code: "medrxiv.forensic-medicine", name: "Forensic Medicine", description: "Medicina forense" },
+      { code: "medrxiv.gastroenterology", name: "Gastroenterology", description: "Gastroenterologia" },
+      { code: "medrxiv.genetic-and-genomic-medicine", name: "Genetic and Genomic Medicine", description: "Medicina genetica y genomica" },
+      { code: "medrxiv.geriatric-medicine", name: "Geriatric Medicine", description: "Medicina geriatrica" },
+      { code: "medrxiv.health-economics", name: "Health Economics", description: "Economia de la salud" },
+      { code: "medrxiv.health-informatics", name: "Health Informatics", description: "Informatica de la salud" },
+      { code: "medrxiv.health-policy", name: "Health Policy", description: "Politicas de salud" },
+      { code: "medrxiv.health-systems", name: "Health Systems and Quality Improvement", description: "Sistemas de salud y mejora de calidad" },
+      { code: "medrxiv.hematology", name: "Hematology", description: "Hematologia" },
+      { code: "medrxiv.hiv-aids", name: "HIV/AIDS", description: "VIH/SIDA" },
+      { code: "medrxiv.infectious-diseases", name: "Infectious Diseases (except HIV/AIDS)", description: "Enfermedades infecciosas (excepto VIH/SIDA)" },
+      { code: "medrxiv.intensive-care", name: "Intensive Care and Critical Care Medicine", description: "Medicina intensiva y critica" },
+      { code: "medrxiv.medical-education", name: "Medical Education", description: "Educacion medica" },
+      { code: "medrxiv.medical-ethics", name: "Medical Ethics", description: "Etica medica" },
+      { code: "medrxiv.nephrology", name: "Nephrology", description: "Nefrologia" },
+      { code: "medrxiv.neurology", name: "Neurology", description: "Neurologia" },
+      { code: "medrxiv.nursing", name: "Nursing", description: "Enfermeria" },
+      { code: "medrxiv.nutrition", name: "Nutrition", description: "Nutricion" },
+      { code: "medrxiv.obstetrics-and-gynecology", name: "Obstetrics and Gynecology", description: "Obstetricia y ginecologia" },
+      { code: "medrxiv.occupational-and-environmental-health", name: "Occupational and Environmental Health", description: "Salud ocupacional y ambiental" },
+      { code: "medrxiv.oncology", name: "Oncology", description: "Oncologia" },
+      { code: "medrxiv.ophthalmology", name: "Ophthalmology", description: "Oftalmologia" },
+      { code: "medrxiv.orthopedics", name: "Orthopedics", description: "Ortopedia" },
+      { code: "medrxiv.otolaryngology", name: "Otolaryngology", description: "Otorrinolaringologia" },
+      { code: "medrxiv.pain-medicine", name: "Pain Medicine", description: "Medicina del dolor" },
+      { code: "medrxiv.palliative-medicine", name: "Palliative Medicine", description: "Medicina paliativa" },
+      { code: "medrxiv.pathology", name: "Pathology", description: "Patologia" },
+      { code: "medrxiv.pediatrics", name: "Pediatrics", description: "Pediatria" },
+      { code: "medrxiv.pharmacology-and-therapeutics", name: "Pharmacology and Therapeutics", description: "Farmacologia y terapeutica" },
+      { code: "medrxiv.primary-care-research", name: "Primary Care Research", description: "Investigacion en atencion primaria" },
+      { code: "medrxiv.psychiatry", name: "Psychiatry and Clinical Psychology", description: "Psiquiatria y psicologia clinica" },
+      { code: "medrxiv.public-and-global-health", name: "Public and Global Health", description: "Salud publica y global" },
+      { code: "medrxiv.radiology-and-imaging", name: "Radiology and Imaging", description: "Radiologia e imagenologia" },
+      { code: "medrxiv.rehabilitation-medicine", name: "Rehabilitation Medicine and Physical Therapy", description: "Medicina de rehabilitacion y fisioterapia" },
+      { code: "medrxiv.respiratory-medicine", name: "Respiratory Medicine", description: "Medicina respiratoria" },
+      { code: "medrxiv.rheumatology", name: "Rheumatology", description: "Reumatologia" },
+      { code: "medrxiv.sexual-and-reproductive-health", name: "Sexual and Reproductive Health", description: "Salud sexual y reproductiva" },
+      { code: "medrxiv.sports-medicine", name: "Sports Medicine", description: "Medicina deportiva" },
+      { code: "medrxiv.surgery", name: "Surgery", description: "Cirugia" },
+      { code: "medrxiv.toxicology", name: "Toxicology", description: "Toxicologia" },
+      { code: "medrxiv.transplantation", name: "Transplantation", description: "Trasplantes" },
+      { code: "medrxiv.urology", name: "Urology", description: "Urologia" },
+    ],
+  },
 ]
+
+/**
+ * Helper: get all arXiv categories only
+ */
+export const ARXIV_ONLY = ARXIV_CATEGORIES.filter((c) => c.source === "arxiv")
+
+/**
+ * Helper: get all medRxiv categories only
+ */
+export const MEDRXIV_ONLY = ARXIV_CATEGORIES.filter((c) => c.source === "medrxiv")
+
+/**
+ * Check if a category code belongs to medRxiv
+ */
+export function isMedRxivCategory(code: string): boolean {
+  return code.startsWith("medrxiv.")
+}
+
+/**
+ * Convert a medRxiv internal code to the subject name used by the medRxiv API
+ * e.g. "medrxiv.cardiovascular-medicine" -> "Cardiovascular Medicine"
+ */
+export function getMedRxivSubjectName(code: string): string | null {
+  for (const cat of ARXIV_CATEGORIES) {
+    if (cat.source !== "medrxiv") continue
+    const sub = cat.subcategories.find((s) => s.code === code)
+    if (sub) return sub.name
+  }
+  return null
+}

@@ -2,15 +2,17 @@
 
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2, Sparkles, BookOpen, Database, Wifi, Clock } from "lucide-react"
+import { Loader2, Sparkles, BookOpen, Database, Wifi, Clock, FlaskConical, Github, HeartPulse } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { PaperCard } from "@/components/paper-card"
 import { SOTARanking } from "@/components/sota-ranking"
 import { StatsCards } from "@/components/stats-cards"
 import { PaperDetail } from "@/components/paper-detail"
 import { getCachedDataUrl } from "@/lib/cache"
+import { isMedRxivCategory } from "@/lib/arxiv-categories"
 import type { CachedCategoryData } from "@/lib/cache"
 import type { AnalyzedPaper, PaperAnalysis } from "@/lib/types"
 
@@ -39,10 +41,18 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
     { revalidateOnFocus: false, shouldRetryOnError: false }
   )
 
-  // Fall back to live arXiv fetch if no cached data
+  // Fall back to live fetch if no cached data - pick the right API based on source
   const shouldFetchLive = selectedCategory && cachedError
+  const liveApiUrl = useMemo(() => {
+    if (!shouldFetchLive || !selectedCategory) return null
+    if (isMedRxivCategory(selectedCategory)) {
+      return `/api/medrxiv?category=${encodeURIComponent(selectedCategory)}&max=50`
+    }
+    return `/api/arxiv?category=${encodeURIComponent(selectedCategory)}&max=50`
+  }, [shouldFetchLive, selectedCategory])
+
   const { data: liveData, isLoading: liveLoading } = useSWR(
-    shouldFetchLive ? `/api/arxiv?category=${encodeURIComponent(selectedCategory)}&max=50` : null,
+    liveApiUrl,
     fetcher,
     { revalidateOnFocus: false }
   )
@@ -57,7 +67,6 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
       }
     }
     if (liveData?.papers) {
-      // Merge any live analyses
       const livePapers = liveData.papers.map((p: AnalyzedPaper) => ({
         ...p,
         analysis: liveAnalyses[p.id] || undefined,
@@ -101,22 +110,63 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
 
   const isLoading = cachedLoading || (shouldFetchLive && liveLoading)
 
+  // ─── Welcome / Beta Screen ────────────────────────────────────
   if (!selectedCategory) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
         <div className="flex size-16 items-center justify-center rounded-2xl bg-muted">
           <BookOpen className="size-8 text-muted-foreground" />
         </div>
+
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground">Select a Category</h2>
-          <p className="mt-1 max-w-md text-sm text-muted-foreground">
-            Choose an arXiv category from the sidebar to view the latest papers and their AI analysis. Categories with cached analyses load instantly.
+          <div className="mb-3 flex items-center justify-center gap-2">
+            <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
+              <FlaskConical className="mr-1 size-3" />
+              BETA
+            </Badge>
+            <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700">
+              <Github className="mr-1 size-3" />
+              Open Source
+            </Badge>
+          </div>
+
+          <h2 className="text-balance text-2xl font-bold text-foreground">
+            arXiv + medRxiv Scanner
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-pretty text-sm leading-relaxed text-muted-foreground">
+            Select a category from the sidebar to view the latest papers and their AI-powered analysis.
+            Each paper is evaluated for novelty, rigor, and SOTA relevance, giving you a clear picture
+            of what is worth reading.
           </p>
+        </div>
+
+        <Card className="mx-auto w-full max-w-lg border-dashed">
+          <CardContent className="p-4">
+            <h3 className="mb-2 text-sm font-semibold text-foreground">What we are building</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Behind the scenes, we are working to link the more than <strong className="text-foreground">3 million papers</strong> across
+              arXiv and medRxiv to this tool. The goal is not only to analyze the latest publications,
+              but to provide <strong className="text-foreground">complete tracking of the papers that shaped each research area</strong> mapped
+              in this app -- from foundational work to the cutting edge.
+            </p>
+          </CardContent>
+        </Card>
+
+        <div className="flex items-center gap-6 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <BookOpen className="size-3.5" />
+            <span>arXiv: 13 categories, 150+ subcategories</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <HeartPulse className="size-3.5" />
+            <span>medRxiv: 51 medical subcategories</span>
+          </div>
         </div>
       </div>
     )
   }
 
+  // ─── Loading ──────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -130,14 +180,15 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
     )
   }
 
+  // ─── No data ──────────────────────────────────────────────────
   if (papers.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="text-center">
           <h3 className="text-lg font-semibold text-foreground">No data available</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            No cached analysis found for this category and live fetch failed. Go to{" "}
-            <a href="/admin" className="text-primary underline">Admin</a> to generate analyses.
+            No cached analysis found for this category and live fetch returned no results.
+            Go to <a href="/admin" className="text-primary underline">Admin</a> to generate analyses.
           </p>
         </div>
       </div>
@@ -147,6 +198,7 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
   const analyzedCount = papers.filter((p: AnalyzedPaper) => p.analysis).length
   const hasAnalyzed = analyzedCount > 0
   const isCached = dataSource === "cached"
+  const isMedrxiv = selectedCategory ? isMedRxivCategory(selectedCategory) : false
 
   return (
     <div className="flex flex-1 flex-col gap-4 py-4">
@@ -158,6 +210,12 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
             <h2 className="text-lg font-semibold text-foreground">
               {selectedCategory}
             </h2>
+            {isMedrxiv && (
+              <Badge variant="outline" className="gap-1 border-rose-200 bg-rose-50 text-rose-700">
+                <HeartPulse className="size-3" />
+                medRxiv
+              </Badge>
+            )}
             {isCached ? (
               <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
                 <Database className="size-3" />
@@ -219,7 +277,6 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
                 analysis: entry.analysis,
               }))}
               onSelectPaper={(paper) => {
-                // Find full paper data
                 const fullPaper = papers.find((p: AnalyzedPaper) => p.id === paper.id)
                 setSelectedPaper(fullPaper || paper)
               }}

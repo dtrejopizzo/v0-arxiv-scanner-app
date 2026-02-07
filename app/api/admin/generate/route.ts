@@ -5,7 +5,9 @@ import { join } from "path"
 import type { ArxivPaper, AnalyzedPaper, PaperAnalysis } from "@/lib/types"
 import { buildSotaRanking, categoryToFilename } from "@/lib/cache"
 import type { CachedCategoryData } from "@/lib/cache"
-import { ARXIV_CATEGORIES } from "@/lib/arxiv-categories"
+import { ARXIV_CATEGORIES, isMedRxivCategory, getMedRxivSubjectName } from "@/lib/arxiv-categories"
+
+const ADMIN_PASSWORD = "Santander2728,2025*34erASsa35"
 
 const paperAnalysisSchema = z.object({
   bsIndex: z.number().describe("BS Index from 1 to 10 (1 = solid science, 10 = total BS)"),
@@ -65,6 +67,50 @@ function parseArxivXml(xml: string): ArxivPaper[] {
   return papers
 }
 
+async function fetchMedRxivPapers(category: string, maxResults: number): Promise<ArxivPaper[]> {
+  const subjectName = getMedRxivSubjectName(category)
+  if (!subjectName) return []
+
+  const endDate = new Date().toISOString().split("T")[0]
+  const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+
+  const allPapers: ArxivPaper[] = []
+  let cursor = 0
+  const pageSize = 100
+
+  while (allPapers.length < maxResults) {
+    const url = `https://api.medrxiv.org/details/medrxiv/${startDate}/${endDate}/${cursor}/${pageSize}`
+    const response = await fetch(url, { headers: { "User-Agent": "ArxivScanner/1.0" } })
+    if (!response.ok) throw new Error(`medRxiv API returned ${response.status}`)
+
+    const data = await response.json()
+    const collection = data.collection || []
+    if (collection.length === 0) break
+
+    for (const item of collection) {
+      if (item.category === subjectName && allPapers.length < maxResults) {
+        allPapers.push({
+          id: `medrxiv:${item.doi}`,
+          title: item.title || "",
+          summary: item.abstract || "",
+          authors: (item.authors || "").split("; ").filter(Boolean),
+          published: item.date || "",
+          updated: item.date || "",
+          categories: [category],
+          primaryCategory: category,
+          link: `https://www.medrxiv.org/content/${item.doi}v${item.version}`,
+          pdfLink: `https://www.medrxiv.org/content/${item.doi}v${item.version}.full.pdf`,
+        })
+      }
+    }
+
+    if (collection.length < pageSize) break
+    cursor += pageSize
+  }
+
+  return allPapers
+}
+
 async function analyzePaper(paper: ArxivPaper): Promise<PaperAnalysis | null> {
   try {
     const { output } = await generateText({
@@ -104,24 +150,31 @@ function getCategoryName(code: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { category, maxResults = 100 } = await req.json()
+    const { category, maxResults = 100, password } = await req.json()
+
+    // Password check
+    if (password !== ADMIN_PASSWORD) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
     if (!category) {
       return Response.json({ error: "Category is required" }, { status: 400 })
     }
 
-    // Step 1: Fetch papers from arXiv
-    const url = `http://export.arxiv.org/api/query?search_query=cat:${encodeURIComponent(category)}&start=0&max_results=${maxResults}&sortBy=submittedDate&sortOrder=descending`
-    const response = await fetch(url, { headers: { "User-Agent": "ArxivScanner/1.0" } })
+    // Step 1: Fetch papers from the appropriate source
+    let papers: ArxivPaper[]
 
-    if (!response.ok) {
-      throw new Error(`arXiv API returned ${response.status}`)
+    if (isMedRxivCategory(category)) {
+      papers = await fetchMedRxivPapers(category, maxResults)
+    } else {
+      const url = `http://export.arxiv.org/api/query?search_query=cat:${encodeURIComponent(category)}&start=0&max_results=${maxResults}&sortBy=submittedDate&sortOrder=descending`
+      const response = await fetch(url, { headers: { "User-Agent": "ArxivScanner/1.0" } })
+      if (!response.ok) throw new Error(`arXiv API returned ${response.status}`)
+      const xml = await response.text()
+      papers = parseArxivXml(xml)
     }
 
-    const xml = await response.text()
-    const papers = parseArxivXml(xml)
-
-    // Step 2: Analyze each paper with AI (with delay to avoid rate limits)
+    // Step 2: Analyze each paper with AI
     const analyzedPapers: AnalyzedPaper[] = []
     let analyzedCount = 0
 
@@ -129,8 +182,6 @@ export async function POST(req: Request) {
       const analysis = await analyzePaper(paper)
       analyzedPapers.push({ ...paper, analysis: analysis ?? undefined })
       if (analysis) analyzedCount++
-
-      // Small delay between API calls to be respectful
       await new Promise((resolve) => setTimeout(resolve, 500))
     }
 
