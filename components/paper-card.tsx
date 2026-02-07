@@ -88,9 +88,10 @@ interface PaperCardProps {
   paper: AnalyzedPaper
   onAnalyze: (paper: AnalyzedPaper) => void
   compact?: boolean
+  isCached?: boolean
 }
 
-export function PaperCard({ paper, onAnalyze, compact = false }: PaperCardProps) {
+export function PaperCard({ paper, onAnalyze, compact = false, isCached = false }: PaperCardProps) {
   const [expanded, setExpanded] = useState(false)
 
   const formattedDate = new Date(paper.published).toLocaleDateString("en-US", {
