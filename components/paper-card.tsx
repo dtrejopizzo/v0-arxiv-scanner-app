@@ -156,7 +156,7 @@ export function PaperCard({ paper, onAnalyze, compact = false, isCached = false 
         {paper.analysis && <AnalysisSection analysis={paper.analysis} />}
 
         <div className="mt-3 flex items-center gap-2">
-          {!paper.analysis && (
+          {!paper.analysis && !isCached && (
             <Button
               size="sm"
               variant="default"

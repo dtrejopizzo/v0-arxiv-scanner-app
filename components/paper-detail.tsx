@@ -10,9 +10,10 @@ interface PaperDetailProps {
   paper: AnalyzedPaper
   onClose: () => void
   onAnalyze: (paper: AnalyzedPaper) => void
+  isCached?: boolean
 }
 
-export function PaperDetail({ paper, onClose, onAnalyze }: PaperDetailProps) {
+export function PaperDetail({ paper, onClose, onAnalyze, isCached = false }: PaperDetailProps) {
   const analysis = paper.analysis
 
   return (
@@ -117,7 +118,7 @@ export function PaperDetail({ paper, onClose, onAnalyze }: PaperDetailProps) {
           )}
 
           <div className="flex items-center gap-2">
-            {!analysis && (
+            {!analysis && !isCached && (
               <Button
                 onClick={() => onAnalyze(paper)}
                 disabled={paper.isAnalyzing}

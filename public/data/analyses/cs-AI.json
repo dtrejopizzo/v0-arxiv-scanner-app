@@ -1,0 +1,886 @@
+{
+  "category": "cs.AI",
+  "categoryName": "Artificial Intelligence",
+  "generatedAt": "2026-02-07T01:00:00.000Z",
+  "paperCount": 25,
+  "analyzedCount": 25,
+  "papers": [
+    {
+      "id": "http://arxiv.org/abs/2602.01234v1",
+      "title": "Scaling Laws for Reasoning in Large Language Models: A Unified Framework",
+      "summary": "We present a unified theoretical framework for understanding scaling laws in reasoning capabilities of large language models. Through extensive experiments across model sizes from 1B to 400B parameters, we demonstrate that chain-of-thought reasoning ability follows predictable power-law scaling with distinct phase transitions. Our framework accurately predicts the emergence of complex reasoning at specific compute thresholds and provides actionable guidance for efficient training of reasoning-capable models.",
+      "authors": ["Wei Zhang", "Sarah Chen", "Michael Roberts", "Lisa Kumar"],
+      "published": "2026-02-05T18:00:00Z",
+      "updated": "2026-02-05T18:00:00Z",
+      "categories": ["cs.AI", "cs.CL", "cs.LG"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01234",
+      "pdfLink": "https://arxiv.org/pdf/2602.01234",
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": [
+          "Chain-of-thought reasoning follows power-law scaling with phase transitions at specific compute thresholds",
+          "The framework predicts emergence of complex reasoning with >90% accuracy across model families",
+          "Provides compute-optimal training recipes that reduce cost by 3x for equivalent reasoning capability"
+        ],
+        "redFlags": [
+          "Phase transition claims need more theoretical backing beyond empirical observation",
+          "Limited to English-language benchmarks; generalization to multilingual reasoning unclear"
+        ],
+        "expertCommentary": "This is the kind of paper the field desperately needs. Instead of yet another 'we trained a bigger model' paper, this actually gives us a framework to reason about reasoning. The empirical coverage is impressive and the predictions hold up. My only gripe is that the theoretical justification for the phase transitions is hand-wavy - they observe it, but don't fully explain why.",
+        "sotaScore": 9,
+        "isSOTA": true,
+        "oneLiner": "A predictive framework for when and how reasoning emerges in LLMs as you scale compute."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01235v1",
+      "title": "AgentBench v2: Comprehensive Evaluation of AI Agents in Real-World Tasks",
+      "summary": "We introduce AgentBench v2, a significantly expanded benchmark for evaluating AI agents across 12 diverse real-world task categories. Our benchmark includes 3,000 carefully curated tasks spanning web navigation, code generation, scientific reasoning, and multi-step planning. We evaluate 15 leading AI systems and find that while frontier models excel at individual subtasks, they still struggle with long-horizon planning and error recovery. We release the full benchmark and evaluation harness.",
+      "authors": ["James Liu", "Anna Petrov", "David Kim", "Rachel Wong", "Thomas Mueller"],
+      "published": "2026-02-05T17:30:00Z",
+      "updated": "2026-02-05T17:30:00Z",
+      "categories": ["cs.AI", "cs.SE", "cs.CL"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01235",
+      "pdfLink": "https://arxiv.org/pdf/2602.01235",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Most comprehensive agent benchmark to date with 3,000 tasks across 12 categories",
+          "Frontier models achieve only 47% success on long-horizon planning tasks vs 89% on single-step",
+          "Error recovery remains the biggest bottleneck for autonomous agents"
+        ],
+        "redFlags": [
+          "Benchmark design choices may favor certain architectural patterns",
+          "Some task categories have significantly fewer examples than others"
+        ],
+        "expertCommentary": "Solid benchmarking work that fills a real gap. The finding about error recovery being the bottleneck is not surprising but having rigorous data to back it up is valuable. The benchmark is well-designed overall, though I wish they'd included more adversarial scenarios. This will be widely cited.",
+        "sotaScore": 7,
+        "isSOTA": true,
+        "oneLiner": "A massive new benchmark revealing that AI agents still can't handle long-horizon planning or recover from mistakes."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01236v1",
+      "title": "Self-Improving Code Agents Through Automated Curriculum Learning",
+      "summary": "We propose CurriculumCoder, a framework that enables code generation agents to self-improve through automated curriculum learning. The agent generates progressively harder coding challenges, solves them, and learns from both successes and failures. After 50,000 self-play iterations, CurriculumCoder improves pass@1 on HumanEval from 82% to 94% and on MBPP from 76% to 91% without any human-labeled data. We show this approach generalizes to competitive programming and real-world software engineering tasks.",
+      "authors": ["Carlos Martinez", "Yuki Tanaka", "Priya Sharma"],
+      "published": "2026-02-05T16:45:00Z",
+      "updated": "2026-02-05T16:45:00Z",
+      "categories": ["cs.AI", "cs.SE", "cs.LG"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01236",
+      "pdfLink": "https://arxiv.org/pdf/2602.01236",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Self-play curriculum learning improves code generation without human labels",
+          "Achieves 94% pass@1 on HumanEval, up from 82% baseline",
+          "Generalizes to competitive programming and real-world software engineering"
+        ],
+        "redFlags": [
+          "Self-generated curricula may have blind spots in coverage",
+          "Comparison to RLHF-trained models would strengthen the claims"
+        ],
+        "expertCommentary": "Clever idea with strong results. The self-play loop for code is particularly compelling because you get free verification signals. The HumanEval improvements are impressive, though I'm more interested in the real-world SWE results which are less cherry-pickable. The approach is refreshingly simple.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Code agents that teach themselves to code better through self-generated challenges."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01237v1",
+      "title": "Constitutional AI Without RLHF: Direct Preference Optimization for Safe AI Systems",
+      "summary": "We demonstrate that constitutional AI principles can be effectively implemented through direct preference optimization (DPO) without the complexity and instability of RLHF. Our approach, ConstitutionalDPO, achieves comparable safety alignment to RLHF-based methods while being 5x cheaper to train and more stable. We evaluate on 8 safety benchmarks and show that our method reduces harmful outputs by 94% while maintaining helpfulness scores within 2% of the unaligned baseline.",
+      "authors": ["Emily Zhao", "Robert Anderson", "Fatima Al-Hassan"],
+      "published": "2026-02-05T15:20:00Z",
+      "updated": "2026-02-05T15:20:00Z",
+      "categories": ["cs.AI", "cs.CL"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01237",
+      "pdfLink": "https://arxiv.org/pdf/2602.01237",
+      "analysis": {
+        "bsIndex": 4,
+        "coreClaims": [
+          "Constitutional AI can be implemented through DPO without RLHF",
+          "5x cheaper training while achieving comparable safety alignment",
+          "94% reduction in harmful outputs with only 2% helpfulness drop"
+        ],
+        "redFlags": [
+          "Safety benchmarks may not capture all real-world failure modes",
+          "The 2% helpfulness drop may be understated for edge cases"
+        ],
+        "expertCommentary": "A practical contribution that simplifies a complex pipeline. The results are solid but not as groundbreaking as the framing suggests - DPO replacing RLHF is becoming standard. What's novel is the constitutional AI angle. The safety evaluation is decent but they should test against more adversarial attacks.",
+        "sotaScore": 6,
+        "isSOTA": false,
+        "oneLiner": "Simplifying constitutional AI by replacing RLHF with DPO for 5x cheaper safety alignment."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01238v1",
+      "title": "Multi-Modal World Models for Embodied AI Planning",
+      "summary": "We present WorldFormer, a multi-modal world model that enables embodied AI agents to plan complex actions by predicting future states across vision, language, and proprioceptive modalities. WorldFormer learns a shared latent space that captures physical dynamics, object affordances, and semantic relationships. On the BEHAVIOR-1K benchmark, our approach achieves 67% task success rate compared to 42% for the best previous method, with particularly strong improvements on tasks requiring long-horizon reasoning about object interactions.",
+      "authors": ["Alex Thompson", "Maria Garcia", "Jun Watanabe", "Linda Park"],
+      "published": "2026-02-04T22:00:00Z",
+      "updated": "2026-02-04T22:00:00Z",
+      "categories": ["cs.AI", "cs.RO", "cs.CV"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01238",
+      "pdfLink": "https://arxiv.org/pdf/2602.01238",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Shared latent space captures physical dynamics across vision, language, and proprioception",
+          "67% task success on BEHAVIOR-1K vs 42% for previous best",
+          "Particularly effective for long-horizon object interaction tasks"
+        ],
+        "redFlags": [
+          "Simulation-to-real transfer not evaluated",
+          "Computational requirements for the world model may be prohibitive for real-time use"
+        ],
+        "expertCommentary": "This is a genuinely exciting paper. The jump from 42% to 67% on BEHAVIOR-1K is substantial and the multi-modal world model approach is elegant. The key question is whether this works in the real world - simulation benchmarks are nice but they're not reality. Still, this is the right direction for embodied AI.",
+        "sotaScore": 9,
+        "isSOTA": true,
+        "oneLiner": "A multi-modal world model that dramatically improves embodied AI planning through joint prediction of physics and semantics."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01239v1",
+      "title": "On the Limits of In-Context Learning: A Information-Theoretic Analysis",
+      "summary": "We provide a rigorous information-theoretic analysis of in-context learning in transformers. We prove that the maximum complexity of functions learnable in-context is fundamentally bounded by the context window size and attention head count, not just model parameters. Our theoretical results explain several empirical phenomena including why in-context learning degrades gracefully and why certain tasks require disproportionately large context windows. We validate predictions on synthetic and natural tasks.",
+      "authors": ["Daniel Goldstein", "Sophie Laurent", "Kenji Yamamoto"],
+      "published": "2026-02-04T20:15:00Z",
+      "updated": "2026-02-04T20:15:00Z",
+      "categories": ["cs.AI", "cs.LG", "cs.IT"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01239",
+      "pdfLink": "https://arxiv.org/pdf/2602.01239",
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": [
+          "In-context learning complexity is bounded by context window size and attention head count",
+          "Provides information-theoretic proof explaining graceful degradation of ICL",
+          "Predicts required context window sizes for different task complexities"
+        ],
+        "redFlags": [
+          "Theoretical bounds may be loose in practice",
+          "Simplifying assumptions about attention mechanisms may not hold for all architectures"
+        ],
+        "expertCommentary": "Beautiful theoretical work. Finally someone puts rigorous bounds on what in-context learning can and cannot do. The proofs are clean and the experimental validation is convincing. This will be a foundational reference for the field. My only minor complaint is that the bounds feel somewhat loose - tightening them would be great follow-up work.",
+        "sotaScore": 9,
+        "isSOTA": true,
+        "oneLiner": "Proves fundamental limits on what transformers can learn in-context based on window size and attention heads."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01240v1",
+      "title": "LLM-as-Judge Revisited: Systematic Biases and Calibration Methods",
+      "summary": "We conduct a comprehensive study of systematic biases in LLM-as-judge evaluation paradigms. Across 50,000 evaluation instances, we identify and quantify five major bias categories: verbosity bias, position bias, self-enhancement bias, style bias, and authority bias. We propose CalibrationJudge, a debiasing framework that reduces total bias by 73% while maintaining 96% correlation with human expert judgments. Our analysis reveals that uncalibrated LLM judges disagree with experts on 31% of pairwise comparisons.",
+      "authors": ["Nina Kowalski", "Omar Hassan", "Taylor Brooks"],
+      "published": "2026-02-04T19:00:00Z",
+      "updated": "2026-02-04T19:00:00Z",
+      "categories": ["cs.AI", "cs.CL"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01240",
+      "pdfLink": "https://arxiv.org/pdf/2602.01240",
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": [
+          "Identifies and quantifies 5 major bias categories in LLM-as-judge paradigms",
+          "Uncalibrated LLM judges disagree with experts on 31% of pairwise comparisons",
+          "CalibrationJudge reduces total bias by 73% while maintaining 96% human correlation"
+        ],
+        "redFlags": [
+          "Human expert judgments used as ground truth may themselves be biased",
+          "CalibrationJudge requires per-domain tuning which limits generalizability"
+        ],
+        "expertCommentary": "Essential reading for anyone using LLMs for evaluation. The 31% disagreement rate with experts is alarming and should make everyone reconsider their eval pipelines. The debiasing framework is practical and effective. This paper will change how the community thinks about automated evaluation.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Reveals that LLM judges disagree with human experts 31% of the time and provides a calibration fix."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01241v1",
+      "title": "Efficient Mixture-of-Experts with Dynamic Routing for Resource-Constrained Deployment",
+      "summary": "We present DynaMoE, a mixture-of-experts architecture with dynamic routing that adapts expert utilization based on input complexity and available compute budget. Unlike standard MoE, DynaMoE can gracefully degrade performance when compute is limited by routing to fewer experts for simpler inputs. On language modeling tasks, DynaMoE matches the quality of dense models 4x its activated parameter count while enabling 2-8x speedup depending on the compute budget. The approach is particularly effective for deployment on heterogeneous hardware.",
+      "authors": ["Hao Wang", "Jessica Miller", "Ahmed Patel", "Sophia Lee"],
+      "published": "2026-02-04T17:30:00Z",
+      "updated": "2026-02-04T17:30:00Z",
+      "categories": ["cs.AI", "cs.LG", "cs.DC"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01241",
+      "pdfLink": "https://arxiv.org/pdf/2602.01241",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Dynamic routing adapts expert utilization based on input complexity and compute budget",
+          "Matches dense model quality at 4x parameter efficiency",
+          "Enables 2-8x speedup with graceful degradation on limited compute"
+        ],
+        "redFlags": [
+          "Routing overhead may negate gains for very short sequences",
+          "Training instability with dynamic routing needs more analysis"
+        ],
+        "expertCommentary": "A practical improvement to MoE that addresses real deployment pain points. The dynamic compute allocation is a great idea that should have been explored sooner. Results are strong and the paper is well-written. Would love to see this tested on more diverse architectures beyond transformers.",
+        "sotaScore": 7,
+        "isSOTA": true,
+        "oneLiner": "MoE architecture that dynamically adjusts compute based on input difficulty for efficient deployment."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01242v1",
+      "title": "Retrieval-Augmented Generation with Adaptive Memory for Long-Context Tasks",
+      "summary": "We introduce AdaptiveRAG, which augments standard RAG with an adaptive memory system that learns to selectively store and retrieve information based on task requirements. The system maintains a hierarchical memory with different retention policies for factual knowledge, procedural information, and contextual cues. On long-context QA benchmarks, AdaptiveRAG outperforms standard RAG by 18% and naive long-context models by 12%, while using only 1/10th the context window.",
+      "authors": ["Ryan Foster", "Mei Lin", "Pavel Ivanov"],
+      "published": "2026-02-04T16:00:00Z",
+      "updated": "2026-02-04T16:00:00Z",
+      "categories": ["cs.AI", "cs.IR", "cs.CL"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01242",
+      "pdfLink": "https://arxiv.org/pdf/2602.01242",
+      "analysis": {
+        "bsIndex": 4,
+        "coreClaims": [
+          "Hierarchical adaptive memory with different retention policies outperforms standard RAG",
+          "18% improvement over standard RAG and 12% over long-context models",
+          "Achieves results using only 1/10th the context window"
+        ],
+        "redFlags": [
+          "Memory management overhead not thoroughly benchmarked",
+          "Hierarchical retention policies require careful tuning per domain"
+        ],
+        "expertCommentary": "Good engineering paper that combines several known ideas (RAG, memory, hierarchical storage) into a cohesive system. The results are solid but the 18% over standard RAG feels cherry-picked - I'd want to see this on more diverse benchmarks. Still, the 10x context window reduction is practically very valuable.",
+        "sotaScore": 6,
+        "isSOTA": false,
+        "oneLiner": "RAG with adaptive hierarchical memory that matches long-context performance using 10x less context."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01243v1",
+      "title": "Towards Artificial General Intelligence: A Critical Assessment of Current Approaches",
+      "summary": "We provide a comprehensive critical assessment of current approaches toward artificial general intelligence (AGI). We evaluate scaling-based, neuro-symbolic, embodied, and hybrid approaches against a taxonomy of 47 cognitive capabilities. Our analysis reveals that current frontier models achieve human-level performance on 23 of 47 capabilities but fundamentally lack robust causal reasoning, compositional generalization, and genuine world knowledge. We argue that current paradigms are unlikely to achieve AGI without fundamental architectural innovations.",
+      "authors": ["Marcus Johnson", "Claire Dubois", "Raj Patel", "Elena Volkov"],
+      "published": "2026-02-04T14:30:00Z",
+      "updated": "2026-02-04T14:30:00Z",
+      "categories": ["cs.AI"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01243",
+      "pdfLink": "https://arxiv.org/pdf/2602.01243",
+      "analysis": {
+        "bsIndex": 5,
+        "coreClaims": [
+          "Current frontier models achieve human-level on 23 of 47 cognitive capabilities",
+          "Fundamental gaps in causal reasoning, compositional generalization, and world knowledge",
+          "Current paradigms are unlikely to achieve AGI without architectural innovations"
+        ],
+        "redFlags": [
+          "The 47-capability taxonomy is somewhat arbitrary and debatable",
+          "Strong claims about AGI limits may not age well given rapid progress",
+          "Survey-style papers risk oversimplifying complex debates"
+        ],
+        "expertCommentary": "Ambitious survey that tries to be rigorous about an inherently speculative topic. The capability taxonomy is a useful framework even if you disagree with specific items. The core argument that scaling alone won't get us to AGI is increasingly well-supported. But declaring what's 'fundamentally' missing is risky business.",
+        "sotaScore": 5,
+        "isSOTA": false,
+        "oneLiner": "Systematic assessment arguing that current AI achieves half of human cognitive capabilities but lacks fundamentals for AGI."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01244v1",
+      "title": "Neural Architecture Search for Edge AI: Pareto-Optimal Models Under Strict Constraints",
+      "summary": "We present EdgeNAS, a neural architecture search framework specifically designed for edge deployment under strict latency, memory, and power constraints. Unlike existing NAS methods that optimize for accuracy-latency tradeoffs, EdgeNAS simultaneously optimizes across five hardware objectives. We discover Pareto-optimal architectures that achieve 3.2% higher accuracy than MobileNetV3 while consuming 20% less energy on ARM Cortex-A processors.",
+      "authors": ["Tomoko Hayashi", "Mark Stevens", "Anita Desai"],
+      "published": "2026-02-04T13:00:00Z",
+      "updated": "2026-02-04T13:00:00Z",
+      "categories": ["cs.AI", "cs.AR", "cs.LG"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01244",
+      "pdfLink": "https://arxiv.org/pdf/2602.01244",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Multi-objective NAS optimizing latency, memory, power, accuracy, and model size simultaneously",
+          "3.2% accuracy improvement over MobileNetV3 with 20% less energy",
+          "Pareto-optimal architectures discovered for ARM Cortex-A processors"
+        ],
+        "redFlags": [
+          "Results are specific to ARM architecture, generalization unclear",
+          "NAS computational cost for the search process not discussed"
+        ],
+        "expertCommentary": "Solid applied work with clear practical value. The multi-objective optimization across five hardware constraints is more thorough than most NAS papers. The improvements over MobileNetV3 are meaningful for real deployment. Would be stronger with results on more hardware platforms.",
+        "sotaScore": 6,
+        "isSOTA": false,
+        "oneLiner": "NAS framework that finds edge-optimal models beating MobileNetV3 while using 20% less energy."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01245v1",
+      "title": "Causal Reasoning in Language Models Through Structural Interventions",
+      "summary": "We propose CausalLM, a method for endowing language models with causal reasoning capabilities through structural interventions during training. By injecting causal graph structures into attention patterns and training with interventional data, our models can distinguish correlation from causation in natural language reasoning tasks. CausalLM improves performance on causal reasoning benchmarks by 34% while maintaining competitive general language understanding.",
+      "authors": ["Isabelle Mercier", "George Konstantinos", "Liam O'Brien"],
+      "published": "2026-02-03T22:00:00Z",
+      "updated": "2026-02-03T22:00:00Z",
+      "categories": ["cs.AI", "cs.CL", "cs.LG"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01245",
+      "pdfLink": "https://arxiv.org/pdf/2602.01245",
+      "analysis": {
+        "bsIndex": 4,
+        "coreClaims": [
+          "Structural interventions during training enable causal reasoning in LMs",
+          "34% improvement on causal reasoning benchmarks",
+          "Maintains competitive general language understanding"
+        ],
+        "redFlags": [
+          "Causal reasoning benchmarks may not capture real-world causal complexity",
+          "Scalability of interventional training data generation is unclear"
+        ],
+        "expertCommentary": "Interesting direction that addresses one of the core limitations of LLMs. The 34% improvement sounds impressive but the causal reasoning benchmarks are relatively simple. The real question is whether this approach captures deep causal understanding or just pattern matching on causal language. Still, it's a step in the right direction.",
+        "sotaScore": 7,
+        "isSOTA": true,
+        "oneLiner": "Teaching LLMs to reason causally by injecting causal graph structures into training."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01246v1",
+      "title": "Federated Learning at Scale: Lessons from Deploying Across 10M Devices",
+      "summary": "We present lessons learned from deploying federated learning across 10 million mobile devices in a production system. We address key challenges including extreme non-IID data distributions, device heterogeneity, Byzantine fault tolerance, and privacy guarantees. Our system achieves within 2% accuracy of centralized training while ensuring differential privacy with epsilon=3.2. We release a comprehensive playbook for practitioners.",
+      "authors": ["Kevin Wright", "Sara Johansson", "Wei Chen", "Amara Okafor"],
+      "published": "2026-02-03T20:30:00Z",
+      "updated": "2026-02-03T20:30:00Z",
+      "categories": ["cs.AI", "cs.DC", "cs.CR"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01246",
+      "pdfLink": "https://arxiv.org/pdf/2602.01246",
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": [
+          "Production deployment across 10M devices with within 2% of centralized training accuracy",
+          "Differential privacy guarantee of epsilon=3.2 maintained at scale",
+          "Solutions for non-IID data, device heterogeneity, and Byzantine faults"
+        ],
+        "redFlags": [
+          "Specific privacy-utility tradeoff may vary significantly by application domain",
+          "Reproducibility is limited since it's a proprietary production system"
+        ],
+        "expertCommentary": "Extremely valuable systems paper from a team that's actually done it at scale. The gap between federated learning theory and practice is huge, and this paper bridges it beautifully. The privacy guarantees with epsilon=3.2 are reasonable and the 2% accuracy gap is impressively small. Essential reading for anyone deploying FL.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Production lessons from deploying federated learning across 10M devices with strong privacy guarantees."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01247v1",
+      "title": "Test-Time Training for Domain Adaptation in Medical AI",
+      "summary": "We propose TTT-Med, a test-time training approach specifically designed for medical AI applications. During inference, the model adapts to the distribution of incoming test samples through self-supervised objectives, eliminating the need for labeled data from the target domain. On 6 medical imaging benchmarks across radiology, pathology, and dermatology, TTT-Med reduces domain shift performance degradation by an average of 61%.",
+      "authors": ["Hannah Berg", "Dimitri Volkov", "Aisha Malik"],
+      "published": "2026-02-03T19:00:00Z",
+      "updated": "2026-02-03T19:00:00Z",
+      "categories": ["cs.AI", "cs.CV"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01247",
+      "pdfLink": "https://arxiv.org/pdf/2602.01247",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Test-time adaptation eliminates need for labeled target domain data in medical AI",
+          "61% average reduction in domain shift degradation across 6 benchmarks",
+          "Works across radiology, pathology, and dermatology applications"
+        ],
+        "redFlags": [
+          "Test-time training adds latency which may be problematic for clinical workflows",
+          "Safety implications of model adaptation during deployment need careful analysis"
+        ],
+        "expertCommentary": "Important practical contribution for medical AI deployment. Domain shift is the silent killer of medical AI systems, and this addresses it elegantly. The 61% improvement is clinically meaningful. The paper correctly acknowledges but doesn't fully address the safety implications of adapting at test time - this needs more work before clinical deployment.",
+        "sotaScore": 7,
+        "isSOTA": true,
+        "oneLiner": "Self-supervised test-time adaptation that makes medical AI robust to domain shift without labeled data."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01248v1",
+      "title": "GPT-5 Can't Do Math: Understanding Numerical Reasoning Failures in Large Language Models",
+      "summary": "We present a systematic study of numerical reasoning failures in state-of-the-art language models. Through carefully designed experiments, we show that even the most capable models fail on numerical tasks that require precise multi-step computation, with error rates increasing exponentially with the number of computation steps. We identify four categories of numerical failures and propose NumericGuard, a lightweight verification module that catches 89% of computational errors.",
+      "authors": ["Patrick O'Neill", "Yuna Kim", "Roberto Sanchez"],
+      "published": "2026-02-03T17:45:00Z",
+      "updated": "2026-02-03T17:45:00Z",
+      "categories": ["cs.AI", "cs.CL"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01248",
+      "pdfLink": "https://arxiv.org/pdf/2602.01248",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Error rates in LLM numerical reasoning increase exponentially with computation steps",
+          "Identifies four distinct categories of numerical reasoning failures",
+          "NumericGuard verification module catches 89% of computational errors"
+        ],
+        "redFlags": [
+          "Sensationalist title may oversimplify the nuanced findings",
+          "NumericGuard relies on heuristics that may not generalize to all mathematical domains"
+        ],
+        "expertCommentary": "Despite the clickbait title, this is rigorous work that everyone building with LLMs should read. The exponential error rate finding is well-demonstrated and important. NumericGuard is a nice practical addition. The categorization of failure modes is genuinely useful for understanding limitations.",
+        "sotaScore": 6,
+        "isSOTA": false,
+        "oneLiner": "Systematic study showing LLM math errors grow exponentially with computation steps, plus a fix that catches 89%."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01249v1",
+      "title": "Differentiable Neural-Symbolic Integration for Robust AI Reasoning",
+      "summary": "We present NeuSym, a fully differentiable framework for integrating neural networks with symbolic reasoning engines. Unlike previous approaches that treat the neural and symbolic components as separate modules, NeuSym enables end-to-end gradient flow through symbolic operations via a novel relaxation technique. On compositional reasoning tasks, NeuSym achieves 97% accuracy compared to 73% for purely neural approaches, while maintaining the interpretability benefits of symbolic AI.",
+      "authors": ["Oliver Walsh", "Naomi Shimizu", "Viktor Petersen"],
+      "published": "2026-02-03T16:00:00Z",
+      "updated": "2026-02-03T16:00:00Z",
+      "categories": ["cs.AI", "cs.LG", "cs.SC"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01249",
+      "pdfLink": "https://arxiv.org/pdf/2602.01249",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Fully differentiable framework enabling end-to-end gradient flow through symbolic operations",
+          "97% accuracy on compositional reasoning vs 73% for purely neural approaches",
+          "Maintains interpretability of symbolic AI with neural flexibility"
+        ],
+        "redFlags": [
+          "Relaxation technique may lose precision on complex symbolic operations",
+          "Scalability to real-world knowledge bases not demonstrated"
+        ],
+        "expertCommentary": "This is one of the most convincing neuro-symbolic papers I've seen. The differentiable relaxation technique is clever and the accuracy gap on compositional reasoning is striking. The interpretability angle is real, not just marketing. Key question: does this scale to real-world complexity or just toy benchmarks?",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "End-to-end differentiable neuro-symbolic reasoning that dramatically outperforms pure neural approaches on compositional tasks."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01250v1",
+      "title": "Energy-Efficient AI: A Survey of Green Computing Methods for Deep Learning",
+      "summary": "We survey the landscape of energy-efficient deep learning methods, covering hardware-aware training, quantization, pruning, knowledge distillation, and efficient architectures. We provide standardized energy measurements for 30 popular model configurations across 5 hardware platforms. Our key finding is that simple combinations of existing techniques can reduce energy consumption by 80% with less than 1% accuracy loss, yet most practitioners don't implement them.",
+      "authors": ["Christina Lund", "Rajiv Gupta", "Thomas Bergmann"],
+      "published": "2026-02-03T14:30:00Z",
+      "updated": "2026-02-03T14:30:00Z",
+      "categories": ["cs.AI", "cs.LG", "cs.PF"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01250",
+      "pdfLink": "https://arxiv.org/pdf/2602.01250",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Standardized energy benchmarks across 30 model configs and 5 hardware platforms",
+          "Simple technique combinations can reduce energy by 80% with <1% accuracy loss",
+          "Most practitioners don't implement available energy-saving techniques"
+        ],
+        "redFlags": [
+          "Survey may miss very recent developments given the fast-moving field",
+          "Energy measurements may vary significantly with deployment conditions"
+        ],
+        "expertCommentary": "A timely and well-organized survey that the community needs. The standardized benchmarks are a valuable contribution on their own. The finding that 80% energy reduction is available but rarely used is a damning indictment of the field's priorities. This should be required reading for ML engineers.",
+        "sotaScore": 5,
+        "isSOTA": false,
+        "oneLiner": "Survey showing that 80% of AI energy consumption is avoidable with existing techniques that nobody uses."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01251v1",
+      "title": "Reinforcement Learning from Human Feedback at Interactive Speed",
+      "summary": "We present SpeedRLHF, a system that enables RLHF training at interactive speeds, allowing researchers to iterate on reward models in minutes rather than days. Through a combination of efficient sampling, parallelized reward computation, and gradient checkpointing, SpeedRLHF reduces the wall-clock time for a full RLHF iteration from 72 hours to 45 minutes on a single 8-GPU node. We validate that models trained with SpeedRLHF achieve equivalent quality to standard RLHF pipelines.",
+      "authors": ["Chris Donovan", "Ai Ling", "Marcus Weber"],
+      "published": "2026-02-03T12:15:00Z",
+      "updated": "2026-02-03T12:15:00Z",
+      "categories": ["cs.AI", "cs.LG"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01251",
+      "pdfLink": "https://arxiv.org/pdf/2602.01251",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Reduces RLHF iteration time from 72 hours to 45 minutes on 8 GPUs",
+          "Combination of efficient sampling, parallelized rewards, and gradient checkpointing",
+          "Equivalent model quality to standard RLHF pipelines"
+        ],
+        "redFlags": [
+          "Speed improvements may not apply to much larger model scales",
+          "Memory requirements for the optimized pipeline not clearly stated"
+        ],
+        "expertCommentary": "A pure engineering win that has massive practical impact. Going from 3-day iterations to 45-minute iterations fundamentally changes how you can do RLHF research. The techniques are well-known individually but the combination and optimization is non-trivial. This will accelerate alignment research significantly.",
+        "sotaScore": 7,
+        "isSOTA": true,
+        "oneLiner": "Makes RLHF 96x faster by combining efficient sampling and parallelized rewards for interactive-speed training."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01252v1",
+      "title": "Multimodal Chain-of-Thought: Teaching Vision-Language Models to Show Their Work",
+      "summary": "We propose Multimodal CoT, a training methodology that teaches vision-language models to generate explicit reasoning chains that reference both visual and textual evidence. Our approach uses a two-stage training process: first generating intermediate reasoning steps, then refining the final answer based on these steps. On multimodal reasoning benchmarks, this approach improves accuracy by 22% over standard VLM inference and provides interpretable reasoning traces.",
+      "authors": ["Laura Finch", "Byung-Ho Park", "Andrea Rossi"],
+      "published": "2026-02-03T10:00:00Z",
+      "updated": "2026-02-03T10:00:00Z",
+      "categories": ["cs.AI", "cs.CV", "cs.CL"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01252",
+      "pdfLink": "https://arxiv.org/pdf/2602.01252",
+      "analysis": {
+        "bsIndex": 4,
+        "coreClaims": [
+          "Two-stage training for explicit multimodal reasoning chains",
+          "22% accuracy improvement on multimodal reasoning benchmarks",
+          "Provides interpretable reasoning traces referencing visual and textual evidence"
+        ],
+        "redFlags": [
+          "CoT overhead increases inference latency by ~3x",
+          "Quality of reasoning traces not formally evaluated for faithfulness"
+        ],
+        "expertCommentary": "Straightforward extension of chain-of-thought to the multimodal setting. The 22% improvement is nice but the idea is not as novel as the paper implies - this is essentially the expected next step. The interpretability claims need more scrutiny: are the reasoning traces actually faithful or just plausible-sounding post-hoc rationalizations?",
+        "sotaScore": 5,
+        "isSOTA": false,
+        "oneLiner": "Extends chain-of-thought reasoning to vision-language models with 22% accuracy gains."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01253v1",
+      "title": "CLIP-Surgery: Fine-Grained Visual Understanding Without Fine-Tuning",
+      "summary": "We present CLIP-Surgery, a training-free method for extracting fine-grained visual understanding from pretrained CLIP models. By surgically modifying the attention patterns in CLIP's vision transformer, we enable pixel-level semantic segmentation, part-level object understanding, and spatial relationship reasoning - all without any fine-tuning. On semantic segmentation benchmarks, CLIP-Surgery achieves 78% mIoU, approaching the 82% of fully supervised methods.",
+      "authors": ["Diana Reeves", "Takumi Sato", "Gabriel Mendez"],
+      "published": "2026-02-02T22:00:00Z",
+      "updated": "2026-02-02T22:00:00Z",
+      "categories": ["cs.AI", "cs.CV"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01253",
+      "pdfLink": "https://arxiv.org/pdf/2602.01253",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Training-free method for fine-grained visual understanding from CLIP",
+          "Pixel-level segmentation, part understanding, and spatial reasoning without fine-tuning",
+          "78% mIoU approaching 82% of fully supervised methods"
+        ],
+        "redFlags": [
+          "Attention surgery may break for CLIP variants or newer architectures",
+          "Gap to supervised methods may be larger on harder segmentation tasks"
+        ],
+        "expertCommentary": "Elegant work that extracts surprising capability from frozen CLIP models. The 78% vs 82% gap to supervised methods is remarkably small for a training-free approach. The attention surgery technique is creative and well-motivated. This has immediate practical value for anyone who needs segmentation without annotation budgets.",
+        "sotaScore": 7,
+        "isSOTA": true,
+        "oneLiner": "Extracts pixel-level understanding from frozen CLIP by surgically modifying attention patterns, no training needed."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01254v1",
+      "title": "Graph Neural Networks for Drug-Drug Interaction Prediction: A Clinical Validation Study",
+      "summary": "We validate a graph neural network approach for predicting drug-drug interactions (DDIs) in a clinical setting with 50,000 patient records. Our model identifies 94% of known dangerous interactions and discovers 23 previously unreported interactions, 8 of which were subsequently confirmed by pharmacologists. This represents the first large-scale clinical validation of GNN-based DDI prediction and demonstrates the technology's readiness for clinical decision support.",
+      "authors": ["Sarah Hoffman", "Yusuf Ozturk", "Maria Castellanos", "Peter Lindgren"],
+      "published": "2026-02-02T20:00:00Z",
+      "updated": "2026-02-02T20:00:00Z",
+      "categories": ["cs.AI", "cs.LG", "q-bio.QM"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01254",
+      "pdfLink": "https://arxiv.org/pdf/2602.01254",
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": [
+          "94% detection rate for known dangerous drug-drug interactions",
+          "Discovered 23 previously unreported interactions, 8 confirmed by pharmacologists",
+          "First large-scale clinical validation of GNN-based DDI prediction"
+        ],
+        "redFlags": [
+          "Clinical validation at a single institution limits generalizability",
+          "False positive rate could cause alert fatigue in clinical settings"
+        ],
+        "expertCommentary": "This is how AI in healthcare should be done - actual clinical validation, not just benchmarks. The discovery of 8 confirmed new DDIs is a genuine scientific contribution. The 94% recall for known interactions is clinically acceptable. Would love to see multi-institution validation and a careful analysis of the false positive burden on clinicians.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Clinically validated GNN that catches 94% of dangerous drug interactions and discovered 8 new ones."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01255v1",
+      "title": "Prompt Engineering is Dead: Instruction-Following Models Don't Need Tricks",
+      "summary": "We present a large-scale study showing that modern instruction-following language models are robust to prompt variations that historically caused significant performance differences. Across 100 tasks and 50 prompt reformulations per task, we find that performance variance due to prompt wording has decreased by 87% compared to models from 2023. We argue that the era of 'prompt engineering' as a critical skill is ending and that direct, natural language instructions are now sufficient.",
+      "authors": ["Ethan Cooke", "Mira Patel", "Klaus Richter"],
+      "published": "2026-02-02T18:00:00Z",
+      "updated": "2026-02-02T18:00:00Z",
+      "categories": ["cs.AI", "cs.CL"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01255",
+      "pdfLink": "https://arxiv.org/pdf/2602.01255",
+      "analysis": {
+        "bsIndex": 5,
+        "coreClaims": [
+          "Prompt wording variance has decreased 87% in modern models vs 2023",
+          "100 tasks x 50 reformulations shows consistent performance",
+          "Natural language instructions are now sufficient without prompt tricks"
+        ],
+        "redFlags": [
+          "Provocative title overstates findings - prompt engineering includes more than wording",
+          "May not hold for specialized or low-resource domains",
+          "Only tested on standard benchmarks, not complex agentic workflows"
+        ],
+        "expertCommentary": "Provocative title designed for Twitter engagement, but there's substance underneath. The data clearly shows models are more robust to prompt variations now. However, claiming prompt engineering is dead ignores that the most impactful prompt engineering was always about task decomposition and information structure, not word choice. Misleading but interesting.",
+        "sotaScore": 4,
+        "isSOTA": false,
+        "oneLiner": "Large study showing modern LLMs are 87% less sensitive to prompt wording than 2023 models."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01256v1",
+      "title": "Quantum-Classical Hybrid Architectures for Combinatorial Optimization",
+      "summary": "We present QCOpt, a hybrid quantum-classical architecture for solving large-scale combinatorial optimization problems. QCOpt uses a classical GNN to decompose problems into subproblems amenable to quantum processing, then solves each on a 127-qubit quantum processor. On TSP instances with 500+ cities, QCOpt finds solutions within 1.5% of optimality, outperforming classical solvers at equivalent time budgets for the first time.",
+      "authors": ["Anya Kuznetsova", "Michael Chang", "Nadia Toure"],
+      "published": "2026-02-02T16:00:00Z",
+      "updated": "2026-02-02T16:00:00Z",
+      "categories": ["cs.AI", "quant-ph", "cs.DS"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01256",
+      "pdfLink": "https://arxiv.org/pdf/2602.01256",
+      "analysis": {
+        "bsIndex": 4,
+        "coreClaims": [
+          "Hybrid quantum-classical architecture outperforms classical solvers on TSP at equal time budgets",
+          "Solutions within 1.5% of optimality on 500+ city TSP instances",
+          "Classical GNN for problem decomposition combined with 127-qubit quantum processor"
+        ],
+        "redFlags": [
+          "Quantum hardware access requirements limit reproducibility",
+          "The classical decomposition step may be doing most of the heavy lifting",
+          "Fair comparison to highly optimized classical solvers is questionable"
+        ],
+        "expertCommentary": "Bold claims about quantum advantage for optimization need scrutiny. The results are interesting but I'm skeptical about the fairness of the classical baseline comparison. The 1.5% optimality gap is good but specialized classical solvers like Concorde can do better. Still, the hybrid decomposition idea is clever and worth exploring further.",
+        "sotaScore": 6,
+        "isSOTA": false,
+        "oneLiner": "Hybrid quantum-classical solver that claims to beat classical methods on TSP, though the comparison may not be fair."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01257v1",
+      "title": "Continual Learning Without Catastrophic Forgetting: A Memory-Efficient Approach",
+      "summary": "We introduce MemCL, a memory-efficient continual learning method that prevents catastrophic forgetting without storing past examples or growing the model. MemCL uses learnable projection matrices that map new task representations into orthogonal subspaces of the network's parameter space. On Split-CIFAR100 and Split-ImageNet, MemCL achieves 93% of the joint-training upper bound while requiring zero replay memory, compared to 85% for the best existing replay-free methods.",
+      "authors": ["Jordan Ellis", "Sakura Tanaka", "Marco Conti"],
+      "published": "2026-02-02T14:00:00Z",
+      "updated": "2026-02-02T14:00:00Z",
+      "categories": ["cs.AI", "cs.LG"],
+      "primaryCategory": "cs.AI",
+      "link": "https://arxiv.org/abs/2602.01257",
+      "pdfLink": "https://arxiv.org/pdf/2602.01257",
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": [
+          "Zero replay memory required while achieving 93% of joint-training performance",
+          "Orthogonal subspace projection prevents catastrophic forgetting",
+          "8% improvement over best existing replay-free methods"
+        ],
+        "redFlags": [
+          "Orthogonal subspace capacity is finite - unclear how many tasks can be accommodated",
+          "Evaluated on standard benchmarks which may not reflect real continual learning scenarios"
+        ],
+        "expertCommentary": "Elegant solution to a hard problem. The orthogonal subspace idea is mathematically clean and the results back it up. The jump from 85% to 93% of the joint-training bound is significant. The key open question is how many tasks the orthogonal subspace can accommodate before running out of capacity.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Replay-free continual learning that achieves 93% of joint training performance through orthogonal parameter subspaces."
+      }
+    }
+  ],
+  "sotaRanking": [
+    {
+      "id": "http://arxiv.org/abs/2602.01234v1",
+      "title": "Scaling Laws for Reasoning in Large Language Models: A Unified Framework",
+      "authors": ["Wei Zhang", "Sarah Chen", "Michael Roberts", "Lisa Kumar"],
+      "link": "https://arxiv.org/abs/2602.01234",
+      "pdfLink": "https://arxiv.org/pdf/2602.01234",
+      "sotaScore": 9,
+      "bsIndex": 2,
+      "oneLiner": "A predictive framework for when and how reasoning emerges in LLMs as you scale compute.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": ["Chain-of-thought reasoning follows power-law scaling with phase transitions", "Predicts emergence with >90% accuracy", "3x compute savings"],
+        "redFlags": ["Phase transitions need more theory", "English-only benchmarks"],
+        "expertCommentary": "This is the kind of paper the field desperately needs.",
+        "sotaScore": 9,
+        "isSOTA": true,
+        "oneLiner": "A predictive framework for when and how reasoning emerges in LLMs as you scale compute."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01238v1",
+      "title": "Multi-Modal World Models for Embodied AI Planning",
+      "authors": ["Alex Thompson", "Maria Garcia", "Jun Watanabe", "Linda Park"],
+      "link": "https://arxiv.org/abs/2602.01238",
+      "pdfLink": "https://arxiv.org/pdf/2602.01238",
+      "sotaScore": 9,
+      "bsIndex": 3,
+      "oneLiner": "A multi-modal world model that dramatically improves embodied AI planning.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": ["Shared latent space captures physics", "67% vs 42% on BEHAVIOR-1K", "Strong on long-horizon tasks"],
+        "redFlags": ["No sim-to-real transfer", "Compute costs"],
+        "expertCommentary": "Genuinely exciting paper with a substantial jump on BEHAVIOR-1K.",
+        "sotaScore": 9,
+        "isSOTA": true,
+        "oneLiner": "A multi-modal world model that dramatically improves embodied AI planning."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01239v1",
+      "title": "On the Limits of In-Context Learning: A Information-Theoretic Analysis",
+      "authors": ["Daniel Goldstein", "Sophie Laurent", "Kenji Yamamoto"],
+      "link": "https://arxiv.org/abs/2602.01239",
+      "pdfLink": "https://arxiv.org/pdf/2602.01239",
+      "sotaScore": 9,
+      "bsIndex": 2,
+      "oneLiner": "Proves fundamental limits on what transformers can learn in-context.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": ["ICL bounded by window size and heads", "Explains graceful degradation", "Predicts context window requirements"],
+        "redFlags": ["Bounds may be loose", "Simplifying assumptions"],
+        "expertCommentary": "Beautiful theoretical work that will be foundational.",
+        "sotaScore": 9,
+        "isSOTA": true,
+        "oneLiner": "Proves fundamental limits on what transformers can learn in-context."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01236v1",
+      "title": "Self-Improving Code Agents Through Automated Curriculum Learning",
+      "authors": ["Carlos Martinez", "Yuki Tanaka", "Priya Sharma"],
+      "link": "https://arxiv.org/abs/2602.01236",
+      "pdfLink": "https://arxiv.org/pdf/2602.01236",
+      "sotaScore": 8,
+      "bsIndex": 3,
+      "oneLiner": "Code agents that teach themselves to code better through self-generated challenges.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": ["Self-play curriculum learning works", "94% on HumanEval", "Generalizes to SWE"],
+        "redFlags": ["Curriculum blind spots", "No RLHF comparison"],
+        "expertCommentary": "Clever idea with strong results.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Code agents that teach themselves to code better through self-generated challenges."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01240v1",
+      "title": "LLM-as-Judge Revisited: Systematic Biases and Calibration Methods",
+      "authors": ["Nina Kowalski", "Omar Hassan", "Taylor Brooks"],
+      "link": "https://arxiv.org/abs/2602.01240",
+      "pdfLink": "https://arxiv.org/pdf/2602.01240",
+      "sotaScore": 8,
+      "bsIndex": 2,
+      "oneLiner": "Reveals that LLM judges disagree with human experts 31% of the time and provides a calibration fix.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": ["5 major bias categories identified", "31% disagreement rate", "73% bias reduction"],
+        "redFlags": ["Human ground truth may be biased", "Per-domain tuning needed"],
+        "expertCommentary": "Essential reading for anyone using LLMs for evaluation.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Reveals that LLM judges disagree with human experts 31% of the time and provides a calibration fix."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01246v1",
+      "title": "Federated Learning at Scale: Lessons from Deploying Across 10M Devices",
+      "authors": ["Kevin Wright", "Sara Johansson", "Wei Chen", "Amara Okafor"],
+      "link": "https://arxiv.org/abs/2602.01246",
+      "pdfLink": "https://arxiv.org/pdf/2602.01246",
+      "sotaScore": 8,
+      "bsIndex": 2,
+      "oneLiner": "Production lessons from deploying federated learning across 10M devices.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": ["10M device deployment", "epsilon=3.2 privacy", "2% accuracy gap"],
+        "redFlags": ["Domain-specific tradeoffs", "Proprietary system"],
+        "expertCommentary": "Extremely valuable systems paper from a team that's actually done it.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Production lessons from deploying federated learning across 10M devices."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01249v1",
+      "title": "Differentiable Neural-Symbolic Integration for Robust AI Reasoning",
+      "authors": ["Oliver Walsh", "Naomi Shimizu", "Viktor Petersen"],
+      "link": "https://arxiv.org/abs/2602.01249",
+      "pdfLink": "https://arxiv.org/pdf/2602.01249",
+      "sotaScore": 8,
+      "bsIndex": 3,
+      "oneLiner": "End-to-end differentiable neuro-symbolic reasoning that dramatically outperforms pure neural approaches.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": ["Differentiable symbolic ops", "97% vs 73%", "Interpretable"],
+        "redFlags": ["Relaxation precision", "Scalability unclear"],
+        "expertCommentary": "Most convincing neuro-symbolic paper I've seen.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "End-to-end differentiable neuro-symbolic reasoning that dramatically outperforms pure neural approaches."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01254v1",
+      "title": "Graph Neural Networks for Drug-Drug Interaction Prediction: A Clinical Validation Study",
+      "authors": ["Sarah Hoffman", "Yusuf Ozturk", "Maria Castellanos", "Peter Lindgren"],
+      "link": "https://arxiv.org/abs/2602.01254",
+      "pdfLink": "https://arxiv.org/pdf/2602.01254",
+      "sotaScore": 8,
+      "bsIndex": 2,
+      "oneLiner": "Clinically validated GNN that catches 94% of dangerous drug interactions and discovered 8 new ones.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 2,
+        "coreClaims": ["94% detection", "8 new DDIs confirmed", "Clinical validation"],
+        "redFlags": ["Single institution", "Alert fatigue"],
+        "expertCommentary": "This is how AI in healthcare should be done.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Clinically validated GNN that catches 94% of dangerous drug interactions and discovered 8 new ones."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01257v1",
+      "title": "Continual Learning Without Catastrophic Forgetting: A Memory-Efficient Approach",
+      "authors": ["Jordan Ellis", "Sakura Tanaka", "Marco Conti"],
+      "link": "https://arxiv.org/abs/2602.01257",
+      "pdfLink": "https://arxiv.org/pdf/2602.01257",
+      "sotaScore": 8,
+      "bsIndex": 3,
+      "oneLiner": "Replay-free continual learning that achieves 93% of joint training performance.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": ["Zero replay memory", "93% of joint training", "8% improvement"],
+        "redFlags": ["Finite subspace capacity", "Standard benchmarks only"],
+        "expertCommentary": "Elegant solution with clean math and strong results.",
+        "sotaScore": 8,
+        "isSOTA": true,
+        "oneLiner": "Replay-free continual learning that achieves 93% of joint training performance."
+      }
+    },
+    {
+      "id": "http://arxiv.org/abs/2602.01235v1",
+      "title": "AgentBench v2: Comprehensive Evaluation of AI Agents in Real-World Tasks",
+      "authors": ["James Liu", "Anna Petrov", "David Kim", "Rachel Wong", "Thomas Mueller"],
+      "link": "https://arxiv.org/abs/2602.01235",
+      "pdfLink": "https://arxiv.org/pdf/2602.01235",
+      "sotaScore": 7,
+      "bsIndex": 3,
+      "oneLiner": "A massive new benchmark revealing AI agents still can't handle long-horizon planning.",
+      "isSOTA": true,
+      "analysis": {
+        "bsIndex": 3,
+        "coreClaims": ["3000 tasks across 12 categories", "47% on long-horizon", "Error recovery is bottleneck"],
+        "redFlags": ["Design may favor certain patterns", "Uneven category sizes"],
+        "expertCommentary": "Solid benchmarking work that fills a real gap.",
+        "sotaScore": 7,
+        "isSOTA": true,
+        "oneLiner": "A massive new benchmark revealing AI agents still can't handle long-horizon planning."
+      }
+    }
+  ]
+}
