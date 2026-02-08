@@ -6,13 +6,13 @@ import { sql } from "@/lib/db"
 import { PLANS } from "@/lib/plans"
 
 const paperAnalysisSchema = z.object({
-  bsIndex: z.number().describe("BS Index from 0 to 10 (0 = solid science, 10 = total BS)"),
-  coreClaims: z.array(z.string()).describe("List of 3-5 core claims the paper makes"),
-  redFlags: z.array(z.string()).describe("List of 2-4 red flags or methodological concerns"),
-  expertCommentary: z.string().describe("A blunt, honest, witty expert commentary on the paper in 3-5 sentences. Be direct, insightful, and dont hold back on criticism or praise."),
-  sotaScore: z.number().describe("SOTA relevance score from 0-10 (10 = defines the frontier, 0 = incremental/rehash)"),
-  isSOTA: z.boolean().describe("Whether this paper genuinely pushes the state-of-the-art forward"),
-  oneLiner: z.string().describe("A single-sentence TL;DR of what the paper actually contributes"),
+  bsIndex: z.number().describe("BS Index 0-10. Most papers should be 3-6. Only truly rigorous work gets 0-2. Hype-driven or poorly supported claims get 7-10."),
+  coreClaims: z.array(z.string()).describe("3-5 core claims. State them neutrally - what the paper CLAIMS, not what it proves."),
+  redFlags: z.array(z.string()).describe("2-4 red flags. EVERY paper has weaknesses. Missing baselines, limited datasets, overclaimed results, cherry-picked examples, no ablations, toy benchmarks, etc. Be specific."),
+  expertCommentary: z.string().describe("3-5 sentences of brutally honest expert analysis. What's genuinely new vs recycled? Are the experiments convincing or window dressing? Would a senior reviewer accept this at a top venue? Don't be nice - be accurate."),
+  sotaScore: z.number().describe("SOTA score 0-10. CALIBRATION: 0-2 = incremental/derivative, 3-4 = solid but expected, 5-6 = interesting contribution, 7-8 = significant advance (top 5% of papers), 9-10 = field-defining (1-2 papers per year per subfield). Most papers are 2-5."),
+  isSOTA: z.boolean().describe("TRUE ONLY if sotaScore >= 7. This means the paper genuinely advances the state of the art in a meaningful way. Most papers do NOT qualify."),
+  oneLiner: z.string().describe("A single honest sentence. Not hype, not marketing. What does this paper actually contribute when you strip away the framing?"),
 })
 
 export async function POST(req: Request) {
@@ -106,21 +106,34 @@ export async function POST(req: Request) {
       `
     }
 
-    // Run AI analysis
+    // Run AI analysis with calibrated, critical prompt
     const { output } = await generateText({
       model: "google/gemini-2.0-flash",
       output: Output.object({ schema: paperAnalysisSchema }),
+      system: `You are a ruthlessly honest senior researcher who has reviewed thousands of papers for top-tier venues (NeurIPS, ICML, Nature, Science, CVPR, ACL, etc). You have zero tolerance for hype, overclaimed results, or incremental work dressed up as breakthroughs.
+
+YOUR CALIBRATION (this is critical - follow it strictly):
+- BS Index: Most papers are 3-6. Solid empirical work with honest claims: 2-4. Papers with unsupported claims, missing ablations, or hype language: 6-8. Only clearly fraudulent or absurd papers: 9-10. Only exceptionally rigorous work with all bases covered: 0-1.
+- SOTA Score: This is the MOST IMPORTANT score. Be EXTREMELY stingy.
+  * 0-2: Incremental, derivative, or rehashing known ideas with minor twists. This is ~60% of all papers.
+  * 3-4: Solid contribution but not surprising. Competent engineering or expected extension. ~25% of papers.
+  * 5-6: Genuinely interesting. Novel angle, strong results, or important negative result. ~10% of papers.
+  * 7-8: Significant advance. Would be a spotlight/oral at a top venue. Only ~4% of papers.
+  * 9-10: Field-defining. Changes how people think about the problem. Maybe 1-2 per subfield per year. ~1% of papers.
+- isSOTA: Set to TRUE only when sotaScore >= 7. If you're unsure, the answer is FALSE.
+- Red Flags: EVERY paper has them. No exceptions. Even great papers have limitations. Find them.
+- Expert Commentary: Write as if you're explaining to a colleague over coffee why this paper matters (or doesn't). Be direct, specific, and back up your assessment with concrete observations from the abstract.
+
+Remember: The purpose of this analysis is to help researchers quickly identify the rare papers that actually matter. If you rate everything highly, you are useless. Be the filter.`,
       messages: [
         {
           role: "user",
-          content: `You are an expert research paper analyst. Analyze this academic paper critically.
+          content: `Analyze this paper:
 
 TITLE: ${title}
 AUTHORS: ${authors?.join(", ") || "Unknown"}
 CATEGORIES: ${categories?.join(", ") || "Unknown"}
-ABSTRACT: ${summary}
-
-Be critical but fair. Consider novelty, rigor, claims vs methodology, and real-world impact.`,
+ABSTRACT: ${summary}`,
         },
       ],
     })

@@ -70,17 +70,26 @@ export async function POST(request: Request) {
     await sql`UPDATE analysis_requests SET status = 'processing', processed_at = NOW() WHERE id = ${requestId}`
 
     try {
-      // Run AI analysis
+      // Run AI analysis with calibrated prompt
       const { text } = await generateText({
         model: "openai/gpt-4o-mini",
-        prompt: `You are an expert research paper analyst. Analyze this paper and return ONLY valid JSON.
+        system: `You are a ruthlessly honest senior researcher who has reviewed thousands of papers for top-tier venues. You return ONLY valid JSON, no markdown.
+
+CALIBRATION (follow strictly):
+- bsIndex: Most papers 3-6. Solid honest work: 2-4. Unsupported hype: 6-8. Only 0-1 for exceptional rigor. Only 9-10 for absurd claims.
+- sotaScore: BE EXTREMELY STINGY. 0-2 = incremental/derivative (~60% of papers). 3-4 = solid but expected (~25%). 5-6 = genuinely interesting (~10%). 7-8 = significant advance, would be oral at top venue (~4%). 9-10 = field-defining, maybe 1-2 per subfield per year (~1%).
+- isSOTA: TRUE ONLY if sotaScore >= 7. When in doubt, FALSE.
+- redFlags: EVERY paper has them. Find 2-4 specific weaknesses.
+- expertCommentary: Brutally honest. What's actually new vs recycled? Are experiments convincing or window dressing?
+- oneLiner: Honest, no hype. What does this actually contribute?
+
+If you rate everything highly, you are useless. Be the filter that helps researchers find the rare papers that actually matter.`,
+        prompt: `Analyze this paper. Return ONLY valid JSON: {"bsIndex":<0-10>,"coreClaims":["..."],"redFlags":["..."],"expertCommentary":"...","sotaScore":<0-10>,"isSOTA":<bool>,"oneLiner":"..."}
 
 Title: ${req.title}
 Abstract: ${req.abstract}
 Authors: ${(req.authors || []).join(", ")}
-Categories: ${(req.categories || []).join(", ")}
-
-Return: {"bsIndex":<0-10>,"coreClaims":["..."],"redFlags":["..."],"expertCommentary":"...","sotaScore":<0-10>,"isSOTA":<bool>,"oneLiner":"..."}`,
+Categories: ${(req.categories || []).join(", ")}`,
         temperature: 0.3,
       })
 

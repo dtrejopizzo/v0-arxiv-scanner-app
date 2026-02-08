@@ -1,17 +1,17 @@
 import { generateText, Output } from "ai"
 import { z } from "zod"
-import { neon } from "@neondatabase/serverless"
+import { sql } from "@/lib/db"
 
 const ADMIN_PASSWORD = "Santander2728,2025*34erASsa35"
 
 const paperAnalysisSchema = z.object({
-  bsIndex: z.number().describe("BS Index from 1 to 10 (1 = solid science, 10 = total BS)"),
-  coreClaims: z.array(z.string()).describe("List of 3-5 core claims the paper makes"),
-  redFlags: z.array(z.string()).describe("List of 2-4 red flags or methodological concerns"),
-  expertCommentary: z.string().describe("A blunt, honest, witty expert commentary on the paper in 3-5 sentences."),
-  sotaScore: z.number().describe("SOTA relevance score from 1-10 (10 = defines the frontier)"),
-  isSOTA: z.boolean().describe("Whether this paper genuinely pushes the state-of-the-art forward"),
-  oneLiner: z.string().describe("A single-sentence TL;DR of what the paper actually contributes"),
+  bsIndex: z.number().describe("BS Index 0-10. Most papers 3-6. Only exceptional rigor: 0-1. Hype without substance: 7-10."),
+  coreClaims: z.array(z.string()).describe("3-5 core claims stated neutrally."),
+  redFlags: z.array(z.string()).describe("2-4 specific weaknesses. EVERY paper has them."),
+  expertCommentary: z.string().describe("3-5 sentences of brutally honest analysis."),
+  sotaScore: z.number().describe("0-2 incremental (~60%). 3-4 solid (~25%). 5-6 interesting (~10%). 7-8 significant (~4%). 9-10 field-defining (~1%)."),
+  isSOTA: z.boolean().describe("TRUE ONLY if sotaScore >= 7."),
+  oneLiner: z.string().describe("Honest single sentence, no hype."),
 })
 
 export const maxDuration = 300
@@ -28,14 +28,12 @@ export async function POST(req: Request) {
       return Response.json({ error: "Category is required" }, { status: 400 })
     }
 
-    const sql = neon(process.env.DATABASE_URL!)
-
     // Get unanalyzed papers from the DB for this category
     const papers = await sql`
       SELECT id, title, abstract, authors, categories, primary_category
       FROM papers
       WHERE primary_category = ${category}
-        AND ai_bs_index IS NULL
+        AND analyzed_at IS NULL
       ORDER BY published_date DESC
       LIMIT ${maxResults}
     `
@@ -51,17 +49,24 @@ export async function POST(req: Request) {
         const { output } = await generateText({
           model: "google/gemini-2.0-flash",
           output: Output.object({ schema: paperAnalysisSchema }),
+          system: `You are a ruthlessly honest senior researcher who has reviewed thousands of papers for top-tier venues (NeurIPS, ICML, Nature, Science, etc). Zero tolerance for hype or overclaimed results.
+
+CALIBRATION (critical - follow strictly):
+- bsIndex: Most papers 3-6. Only 0-1 for exceptionally rigorous work. 7-10 for unsupported or hyped claims.
+- sotaScore: THE MOST IMPORTANT SCORE. 0-2 = incremental/derivative (~60% of all papers). 3-4 = solid but expected (~25%). 5-6 = genuinely interesting (~10%). 7-8 = significant advance, oral at top venue (~4%). 9-10 = field-defining, 1-2 per subfield per year (~1%).
+- isSOTA: TRUE ONLY if sotaScore >= 7. If unsure, FALSE.
+- redFlags: EVERY paper has weaknesses. No exceptions.
+- expertCommentary: Write as if explaining to a colleague why this paper matters or doesn't. Be direct and specific.
+
+You are a filter. If you rate everything highly, you are useless. Help researchers find the rare papers that actually matter.`,
           messages: [{
             role: "user",
-            content: `You are an expert research paper analyst. Analyze this academic paper critically. Be blunt and witty.
+            content: `Analyze this paper:
 
-PAPER TITLE: ${paper.title}
+TITLE: ${paper.title}
 AUTHORS: ${(paper.authors as string[]).join(", ")}
 CATEGORIES: ${(paper.categories as string[]).join(", ")}
-ABSTRACT:
-${paper.abstract}
-
-Consider: Is this genuinely novel? Are claims well-supported? Does it push SOTA forward? What red flags would a careful reviewer catch?`,
+ABSTRACT: ${paper.abstract}`,
           }],
         })
 
@@ -69,20 +74,21 @@ Consider: Is this genuinely novel? Are claims well-supported? Does it push SOTA 
 
         await sql`
           UPDATE papers SET
-            ai_bs_index = ${analysis.bsIndex},
-            ai_sota_score = ${analysis.sotaScore},
-            ai_is_sota = ${analysis.isSOTA},
-            ai_one_liner = ${analysis.oneLiner},
-            ai_core_claims = ${JSON.stringify(analysis.coreClaims)},
-            ai_red_flags = ${JSON.stringify(analysis.redFlags)},
-            ai_expert_commentary = ${analysis.expertCommentary},
-            ai_analyzed_at = NOW()
+            bs_index = ${analysis.bsIndex},
+            sota_score = ${analysis.sotaScore},
+            is_sota = ${analysis.isSOTA},
+            one_liner = ${analysis.oneLiner},
+            core_claims = ${JSON.stringify(analysis.coreClaims)},
+            red_flags = ${JSON.stringify(analysis.redFlags)},
+            expert_commentary = ${analysis.expertCommentary},
+            analyzed_at = NOW(),
+            analyzed_by = 'admin'
           WHERE id = ${paper.id}
         `
 
         analyzedCount++
       } catch (error) {
-        console.error(`Failed to analyze paper: ${paper.title}`, error)
+        console.error("Failed to analyze paper:", paper.title, error)
       }
 
       // Rate limit between API calls

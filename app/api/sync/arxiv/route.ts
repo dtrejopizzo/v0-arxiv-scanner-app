@@ -135,15 +135,23 @@ async function analyzePaperWithAI(paper: ArxivEntry) {
   try {
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
-      prompt: `You are an expert research paper analyst. Analyze this paper and return ONLY valid JSON.
+      system: `You are a ruthlessly honest senior researcher. Return ONLY valid JSON. No markdown.
+
+CALIBRATION (follow strictly):
+- bsIndex: Most papers 3-6. Only exceptional rigor gets 0-1. Hype without substance: 7-10.
+- sotaScore: BE STINGY. 0-2 = incremental (~60% of papers). 3-4 = solid but expected (~25%). 5-6 = genuinely interesting (~10%). 7-8 = significant advance (~4%). 9-10 = field-defining (~1%).
+- isSOTA: TRUE ONLY if sotaScore >= 7. Most papers are NOT SOTA.
+- redFlags: EVERY paper has 2-4 weaknesses. Find them.
+- expertCommentary: Brutally honest, 2-3 sentences.
+- oneLiner: No hype, just what it actually does.
+
+You are a filter. If you rate everything highly, you are useless.`,
+      prompt: `Return ONLY JSON: {"bsIndex":<0-10>,"coreClaims":["..."],"redFlags":["..."],"expertCommentary":"...","sotaScore":<0-10>,"isSOTA":<bool>,"oneLiner":"..."}
 
 Title: ${paper.title}
 Abstract: ${paper.summary}
 Authors: ${paper.authors.join(", ")}
-Categories: ${paper.categories.join(", ")}
-
-Return this exact JSON structure:
-{"bsIndex":<0-10>,"coreClaims":["claim1","claim2"],"redFlags":["flag1"],"expertCommentary":"2-3 sentences","sotaScore":<0-10>,"isSOTA":<boolean>,"oneLiner":"single sentence summary"}`,
+Categories: ${paper.categories.join(", ")}`,
       temperature: 0.3,
     })
 
