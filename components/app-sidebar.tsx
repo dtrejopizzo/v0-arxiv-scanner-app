@@ -44,7 +44,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { ARXIV_ONLY, MEDRXIV_ONLY } from "@/lib/arxiv-categories"
-import { UserMenu } from "@/components/user-menu"
 
 const iconMap: Record<string, LucideIcon> = {
   Monitor,
@@ -166,15 +165,6 @@ export function AppSidebar({ selectedCategory, onSelectCategory, ...props }: App
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex items-center justify-between px-2 py-2">
-              <UserMenu />
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

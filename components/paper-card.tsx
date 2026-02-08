@@ -5,7 +5,6 @@ import { ExternalLink, Loader2, Sparkles, ChevronDown, ChevronUp } from "lucide-
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { BookmarkButton } from "@/components/bookmark-button"
 import type { AnalyzedPaper, PaperAnalysis } from "@/lib/types"
 
 function BSIndexBadge({ score }: { score: number }) {
@@ -156,7 +155,7 @@ export function PaperCard({ paper, onAnalyze, compact = false, isCached = false 
 
         {paper.analysis && <AnalysisSection analysis={paper.analysis} />}
 
-        <div className="mt-3 flex items-center gap-2 flex-wrap">
+        <div className="mt-3 flex items-center gap-2">
           {!paper.analysis && !isCached && (
             <Button
               size="sm"
@@ -173,17 +172,6 @@ export function PaperCard({ paper, onAnalyze, compact = false, isCached = false 
               {paper.isAnalyzing ? "Analyzing..." : "Analyze with AI"}
             </Button>
           )}
-          <BookmarkButton
-            paperId={paper.id}
-            title={paper.title}
-            authors={paper.authors}
-            abstract={paper.summary}
-            publishedDate={paper.published}
-            arxivUrl={paper.link}
-            pdfUrl={paper.pdfLink}
-            primaryCategory={paper.categories[0] || "cs.AI"}
-            categories={paper.categories}
-          />
           <Button size="sm" variant="outline" asChild className="h-7 text-xs bg-transparent">
             <a href={paper.link} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="mr-1 size-3" />
