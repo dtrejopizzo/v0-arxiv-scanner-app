@@ -12,6 +12,7 @@ import { StatsCards } from "@/components/stats-cards"
 import { PaperDetail } from "@/components/paper-detail"
 import { getCachedDataUrl } from "@/lib/cache"
 import { isMedRxivCategory } from "@/lib/arxiv-categories"
+import { useAuth } from "@/lib/auth-context"
 import type { CachedCategoryData } from "@/lib/cache"
 import type { AnalyzedPaper } from "@/lib/types"
 
@@ -27,26 +28,85 @@ interface DashboardProps {
 
 export function Dashboard({ selectedCategory }: DashboardProps) {
   const [selectedPaper, setSelectedPaper] = useState<AnalyzedPaper | null>(null)
+  const { user, isAuthenticated } = useAuth()
 
-  // Load cached data from public/data/analyses/
-  const cachedUrl = selectedCategory ? getCachedDataUrl(selectedCategory) : null
+  // Try to load papers from database first
+  const dbUrl = selectedCategory ? `/api/papers?category=${encodeURIComponent(selectedCategory)}&limit=100` : null
+  const { data: dbData, error: dbError, isLoading: dbLoading } = useSWR(
+    dbUrl,
+    fetcher,
+    { revalidateOnFocus: false, shouldRetryOnError: false }
+  )
+
+  // Fallback: load from static JSON files if DB has no data
+  const shouldFallback = dbData && dbData.papers && dbData.papers.length === 0
+  const cachedUrl = selectedCategory && (shouldFallback || dbError) ? getCachedDataUrl(selectedCategory) : null
   const { data: cachedData, error: cachedError, isLoading: cachedLoading } = useSWR<CachedCategoryData>(
     cachedUrl,
     fetcher,
     { revalidateOnFocus: false, shouldRetryOnError: false }
   )
 
-  // Build papers list from cached data
-  const { papers, generatedAt, sourceData } = useMemo(() => {
+  const isLoading = dbLoading || (shouldFallback && cachedLoading)
+
+  // Build papers list - prefer DB, fallback to cached JSON
+  const { papers, generatedAt, sourceData, fromDatabase } = useMemo(() => {
+    // Try database first
+    if (dbData?.papers && dbData.papers.length > 0) {
+      const dbPapers: AnalyzedPaper[] = dbData.papers.map((p: {
+        id: string
+        title: string
+        abstract: string
+        authors: string[]
+        categories: string[]
+        primaryCategory: string
+        publishedDate: string
+        updatedDate: string
+        arxivUrl: string
+        pdfUrl: string
+        comment: string | null
+        source: string
+        analysis: {
+          bsIndex: number
+          sotaScore: number
+          isSOTA: boolean
+          oneLiner: string
+          coreClaims: string[]
+          redFlags: string[]
+          expertCommentary: string
+        } | null
+      }) => ({
+        id: p.id,
+        title: p.title,
+        summary: p.abstract,
+        authors: p.authors || [],
+        published: p.publishedDate,
+        updated: p.updatedDate,
+        categories: p.categories || [],
+        primaryCategory: p.primaryCategory,
+        link: p.arxivUrl || `https://arxiv.org/abs/${p.id}`,
+        pdfLink: p.pdfUrl || `https://arxiv.org/pdf/${p.id}`,
+        analysis: p.analysis || undefined,
+      }))
+      return {
+        papers: dbPapers,
+        generatedAt: null,
+        sourceData: null,
+        fromDatabase: true,
+      }
+    }
+
+    // Fallback to cached JSON
     if (cachedData?.papers) {
       return {
         papers: cachedData.papers,
         generatedAt: cachedData.generatedAt,
         sourceData: cachedData,
+        fromDatabase: false,
       }
     }
-    return { papers: [] as AnalyzedPaper[], generatedAt: null, sourceData: null }
-  }, [cachedData])
+    return { papers: [] as AnalyzedPaper[], generatedAt: null, sourceData: null, fromDatabase: false }
+  }, [dbData, cachedData])
 
   // No-op analyze (all analysis is pre-computed)
   const analyzePaper = useCallback(async (_paper: AnalyzedPaper) => {}, [])
@@ -108,7 +168,7 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
   }
 
   // ─── Loading ──────────────────────────────────────────────────
-  if (cachedLoading) {
+  if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -122,7 +182,7 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
   }
 
   // ─── No data available ────────────────────────────────────────
-  if (cachedError || papers.length === 0) {
+  if ((dbError && cachedError) || (!isLoading && papers.length === 0)) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="text-center">
@@ -159,10 +219,17 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
                 medRxiv
               </Badge>
             )}
-            <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
-              <Database className="size-3" />
-              AI Analyzed
-            </Badge>
+            {fromDatabase ? (
+              <Badge variant="outline" className="gap-1 border-blue-300 bg-blue-50 text-blue-700">
+                <Database className="size-3" />
+                Live Database
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
+                <Database className="size-3" />
+                Cached Data
+              </Badge>
+            )}
           </div>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3" />

@@ -25,6 +25,7 @@ import type { LucideIcon } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -37,6 +38,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { SidebarUserMenu } from "@/components/sidebar-user-menu"
 import {
   Collapsible,
   CollapsibleContent,
@@ -164,6 +166,9 @@ export function AppSidebar({ selectedCategory, onSelectCategory, ...props }: App
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarUserMenu />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )
