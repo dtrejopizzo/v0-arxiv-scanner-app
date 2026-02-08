@@ -68,15 +68,19 @@ export function BookmarkButton({
 
         if (!res.ok) {
           const error = await res.json()
-          alert(error.error || "Failed to bookmark")
+          if (error.error?.includes("MODULE_NOT_FOUND")) {
+            alert("Bookmark feature is not available yet. Please run: npm install")
+          } else {
+            alert(error.error || "Failed to bookmark")
+          }
           return
         }
       }
 
       mutate("/api/bookmarks")
     } catch (error) {
-      console.error("[v0] Bookmark error:", error)
-      alert("Failed to update bookmark")
+      console.error("[v0] Bookmark feature requires dependencies to be installed")
+      alert("Bookmark feature is not available yet. Please run: npm install")
     } finally {
       setLoading(false)
     }

@@ -16,8 +16,18 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export function UserMenu() {
-  const { user, logout } = useAuth()
+  const { user, logout, loading } = useAuth()
   const router = useRouter()
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" disabled>
+          Loading...
+        </Button>
+      </div>
+    )
+  }
 
   if (!user) {
     return (

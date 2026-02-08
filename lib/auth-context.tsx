@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null)
       }
     } catch (error) {
-      console.error("[v0] Failed to fetch user:", error)
+      console.error("[v0] Auth not available yet - dependencies need to be installed")
       setUser(null)
     }
   }
@@ -46,33 +46,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string) => {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    })
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (!res.ok) {
-      const error = await res.json()
-      throw new Error(error.error || "Login failed")
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Login failed")
+      }
+
+      await refreshUser()
+    } catch (error) {
+      throw new Error("Authentication system is not available yet. Please run: npm install")
     }
-
-    await refreshUser()
   }
 
   const signup = async (email: string, password: string, fullName?: string) => {
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, fullName }),
-    })
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, fullName }),
+      })
 
-    if (!res.ok) {
-      const error = await res.json()
-      throw new Error(error.error || "Signup failed")
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Signup failed")
+      }
+
+      await refreshUser()
+    } catch (error) {
+      throw new Error("Authentication system is not available yet. Please run: npm install")
     }
-
-    await refreshUser()
   }
 
   const logout = async () => {
