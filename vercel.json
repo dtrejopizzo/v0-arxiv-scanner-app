@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync-papers",
+      "schedule": "0 21 * * 1-4"
+    },
+    {
+      "path": "/api/cron/analyze-new-papers",
+      "schedule": "30 21 * * 1-4"
+    }
+  ]
+}
