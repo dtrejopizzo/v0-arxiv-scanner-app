@@ -37,6 +37,11 @@ export default function AdminPage() {
     authenticated ? "/api/admin/status" : null,
     fetcher
   )
+  
+  const { data: papersStatus, isLoading: papersStatusLoading } = useSWR(
+    authenticated ? "/api/papers-status" : null,
+    fetcher
+  )
   const [generationLogs, setGenerationLogs] = useState<GenerationLog[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [currentCategory, setCurrentCategory] = useState<string | null>(null)
@@ -205,6 +210,71 @@ export default function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 p-6">
+        {/* All Papers Status */}
+        {papersStatus && (
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BookOpen className="size-4 text-blue-600" />
+                All Papers Status (all_papers.json)
+              </CardTitle>
+              <CardDescription>
+                {papersStatus.summary.totalAnalyzed.toLocaleString()} of {papersStatus.summary.totalPapers.toLocaleString()} papers analyzed ({papersStatus.summary.overallProgress.toFixed(1)}%)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Progress value={papersStatus.summary.overallProgress} className="h-2" />
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-lg bg-background p-3">
+                  <div className="text-2xl font-bold text-foreground">{papersStatus.summary.totalCategories}</div>
+                  <div className="text-xs text-muted-foreground">Categories</div>
+                </div>
+                <div className="rounded-lg bg-background p-3">
+                  <div className="text-2xl font-bold text-emerald-600">{papersStatus.summary.totalAnalyzed.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Analyzed</div>
+                </div>
+                <div className="rounded-lg bg-background p-3">
+                  <div className="text-2xl font-bold text-amber-600">{papersStatus.summary.totalNeedsAnalysis.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Needs Analysis</div>
+                </div>
+              </div>
+              {papersStatusLoading ? (
+                <div className="flex items-center justify-center gap-2 py-4">
+                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Loading status...</span>
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto rounded-lg bg-background p-3">
+                  <div className="grid gap-2 text-xs">
+                    {papersStatus.categories.map((cat: {
+                      category: string
+                      total: number
+                      analyzed: number
+                      needsAnalysis: number
+                      progress: number
+                    }) => (
+                      <div key={cat.category} className="flex items-center justify-between gap-3">
+                        <span className="font-mono text-muted-foreground">{cat.category}</span>
+                        <div className="flex items-center gap-2">
+                          <Progress value={cat.progress} className="h-1 w-24" />
+                          <span className="text-muted-foreground">
+                            {cat.analyzed}/{cat.total}
+                          </span>
+                          {cat.needsAnalysis > 0 && (
+                            <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 text-[10px]">
+                              {cat.needsAnalysis} pending
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Progress Overview */}
         <Card>
           <CardHeader className="pb-3">
@@ -215,7 +285,7 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <Progress value={progressPercent} className="h-2" />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <Button
                 onClick={() => generateMultiple(pendingCategories)}
                 disabled={isGenerating || pendingCategories.length === 0}
@@ -241,6 +311,56 @@ export default function AdminPage() {
               >
                 <RefreshCw className="mr-2 size-4" />
                 Regenerate All ({totalCategories})
+              </Button>
+              <Button
+                variant="default"
+                onClick={async () => {
+                  setIsGenerating(true)
+                  setGenerationLogs((prev) => [
+                    ...prev,
+                    { category: "all_papers.json", status: "running", message: "Processing all papers with AI analysis..." },
+                  ])
+                  
+                  try {
+                    const res = await fetch("/api/process-papers", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ batchSize: 100 }),
+                    })
+                    
+                    const result = await res.json()
+                    
+                    if (result.success) {
+                      setGenerationLogs((prev) =>
+                        prev.map((l) =>
+                          l.category === "all_papers.json"
+                            ? { ...l, status: "done", message: result.message }
+                            : l
+                        )
+                      )
+                    } else {
+                      throw new Error(result.error)
+                    }
+                    
+                    mutate("/api/admin/status")
+                  } catch (err) {
+                    setGenerationLogs((prev) =>
+                      prev.map((l) =>
+                        l.category === "all_papers.json"
+                          ? { ...l, status: "error", message: String(err) }
+                          : l
+                      )
+                    )
+                  }
+                  
+                  setIsGenerating(false)
+                }}
+                disabled={isGenerating}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Loader2 className="mr-2 size-4" />
+                Process all_papers.json with AI
               </Button>
             </div>
           </CardContent>
