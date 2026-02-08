@@ -1,9 +1,8 @@
 "use client"
 
-import { Clock, Calendar, BarChart3 } from "lucide-react"
+import { Clock, Calendar } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,7 +11,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { isMedRxivCategory } from "@/lib/arxiv-categories"
-import Link from "next/link"
 
 interface SiteHeaderProps {
   selectedCategory: string | null
@@ -42,12 +40,6 @@ export function SiteHeader({ selectedCategory, categoryName }: SiteHeaderProps) 
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-4 text-xs text-muted-foreground">
-        <Button variant="ghost" size="sm" asChild className="h-8 gap-1.5">
-          <Link href="/progress">
-            <BarChart3 className="size-3.5" />
-            <span className="hidden sm:inline">Progress</span>
-          </Link>
-        </Button>
         {!isMedrxiv && (
           <div className="hidden items-center gap-1.5 lg:flex">
             <Calendar className="size-3" />

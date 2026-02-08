@@ -10,10 +10,8 @@ import { PaperCard } from "@/components/paper-card"
 import { SOTARanking } from "@/components/sota-ranking"
 import { StatsCards } from "@/components/stats-cards"
 import { PaperDetail } from "@/components/paper-detail"
-import { getCachedDataUrl } from "@/lib/cache"
 import { isMedRxivCategory } from "@/lib/arxiv-categories"
 import { useAuth } from "@/lib/auth-context"
-import type { CachedCategoryData } from "@/lib/cache"
 import type { AnalyzedPaper } from "@/lib/types"
 
 const fetcher = async (url: string) => {
@@ -30,83 +28,54 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
   const [selectedPaper, setSelectedPaper] = useState<AnalyzedPaper | null>(null)
   const { user, isAuthenticated } = useAuth()
 
-  // Try to load papers from database first
-  const dbUrl = selectedCategory ? `/api/papers?category=${encodeURIComponent(selectedCategory)}&limit=100` : null
-  const { data: dbData, error: dbError, isLoading: dbLoading } = useSWR(
+  // Load papers from database
+  const dbUrl = selectedCategory ? `/api/papers?category=${encodeURIComponent(selectedCategory)}&limit=200` : null
+  const { data: dbData, error: dbError, isLoading } = useSWR(
     dbUrl,
     fetcher,
     { revalidateOnFocus: false, shouldRetryOnError: false }
   )
 
-  // Fallback: load from static JSON files if DB has no data
-  const shouldFallback = dbData && dbData.papers && dbData.papers.length === 0
-  const cachedUrl = selectedCategory && (shouldFallback || dbError) ? getCachedDataUrl(selectedCategory) : null
-  const { data: cachedData, error: cachedError, isLoading: cachedLoading } = useSWR<CachedCategoryData>(
-    cachedUrl,
-    fetcher,
-    { revalidateOnFocus: false, shouldRetryOnError: false }
-  )
+  // Build papers list from DB response
+  const papers = useMemo(() => {
+    if (!dbData?.papers || dbData.papers.length === 0) return [] as AnalyzedPaper[]
 
-  const isLoading = dbLoading || (shouldFallback && cachedLoading)
-
-  // Build papers list - prefer DB, fallback to cached JSON
-  const { papers, generatedAt, sourceData, fromDatabase } = useMemo(() => {
-    // Try database first
-    if (dbData?.papers && dbData.papers.length > 0) {
-      const dbPapers: AnalyzedPaper[] = dbData.papers.map((p: {
-        id: string
-        title: string
-        abstract: string
-        authors: string[]
-        categories: string[]
-        primaryCategory: string
-        publishedDate: string
-        updatedDate: string
-        arxivUrl: string
-        pdfUrl: string
-        comment: string | null
-        source: string
-        analysis: {
-          bsIndex: number
-          sotaScore: number
-          isSOTA: boolean
-          oneLiner: string
-          coreClaims: string[]
-          redFlags: string[]
-          expertCommentary: string
-        } | null
-      }) => ({
-        id: p.id,
-        title: p.title,
-        summary: p.abstract,
-        authors: p.authors || [],
-        published: p.publishedDate,
-        updated: p.updatedDate,
-        categories: p.categories || [],
-        primaryCategory: p.primaryCategory,
-        link: p.arxivUrl || `https://arxiv.org/abs/${p.id}`,
-        pdfLink: p.pdfUrl || `https://arxiv.org/pdf/${p.id}`,
-        analysis: p.analysis || undefined,
-      }))
-      return {
-        papers: dbPapers,
-        generatedAt: null,
-        sourceData: null,
-        fromDatabase: true,
-      }
-    }
-
-    // Fallback to cached JSON
-    if (cachedData?.papers) {
-      return {
-        papers: cachedData.papers,
-        generatedAt: cachedData.generatedAt,
-        sourceData: cachedData,
-        fromDatabase: false,
-      }
-    }
-    return { papers: [] as AnalyzedPaper[], generatedAt: null, sourceData: null, fromDatabase: false }
-  }, [dbData, cachedData])
+    return dbData.papers.map((p: {
+      id: string
+      title: string
+      abstract: string
+      authors: string[]
+      categories: string[]
+      primaryCategory: string
+      publishedDate: string
+      updatedDate: string
+      arxivUrl: string
+      pdfUrl: string
+      comment: string | null
+      source: string
+      analysis: {
+        bsIndex: number
+        sotaScore: number
+        isSOTA: boolean
+        oneLiner: string
+        coreClaims: string[]
+        redFlags: string[]
+        expertCommentary: string
+      } | null
+    }) => ({
+      id: p.id,
+      title: p.title,
+      summary: p.abstract,
+      authors: p.authors || [],
+      published: p.publishedDate,
+      updated: p.updatedDate,
+      categories: p.categories || [],
+      primaryCategory: p.primaryCategory,
+      link: p.arxivUrl || `https://arxiv.org/abs/${p.id}`,
+      pdfLink: p.pdfUrl || `https://arxiv.org/pdf/${p.id}`,
+      analysis: p.analysis || undefined,
+    })) as AnalyzedPaper[]
+  }, [dbData])
 
   // No-op analyze (all analysis is pre-computed)
   const analyzePaper = useCallback(async (_paper: AnalyzedPaper) => {}, [])
@@ -182,7 +151,7 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
   }
 
   // ─── No data available ────────────────────────────────────────
-  if ((dbError && cachedError) || (!isLoading && papers.length === 0)) {
+  if (dbError || (!isLoading && papers.length === 0)) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="text-center">
@@ -219,23 +188,15 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
                 medRxiv
               </Badge>
             )}
-            {fromDatabase ? (
-              <Badge variant="outline" className="gap-1 border-blue-300 bg-blue-50 text-blue-700">
-                <Database className="size-3" />
-                Live Database
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
-                <Database className="size-3" />
-                Cached Data
-              </Badge>
-            )}
+            <Badge variant="outline" className="gap-1 border-blue-300 bg-blue-50 text-blue-700">
+              <Database className="size-3" />
+              {dbData?.total?.toLocaleString() ?? papers.length} papers in DB
+            </Badge>
           </div>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3" />
-            {papers.length} papers
-            {generatedAt && ` - Generated ${new Date(generatedAt).toLocaleString()}`}
-            {hasAnalyzed && ` - ${analyzedCount} analyzed`}
+            {papers.length} papers loaded
+            {hasAnalyzed && ` - ${analyzedCount} with AI analysis`}
           </p>
         </div>
       </div>
@@ -252,32 +213,10 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="sota" className="mt-4">
-          {sourceData?.sotaRanking ? (
-            <SOTARanking
-              papers={sourceData.sotaRanking.map((entry) => ({
-                id: entry.id,
-                title: entry.title,
-                authors: entry.authors,
-                link: entry.link,
-                pdfLink: entry.pdfLink,
-                summary: "",
-                published: "",
-                updated: "",
-                categories: [],
-                primaryCategory: selectedCategory,
-                analysis: entry.analysis,
-              }))}
-              onSelectPaper={(paper) => {
-                const fullPaper = papers.find((p: AnalyzedPaper) => p.id === paper.id)
-                setSelectedPaper(fullPaper || paper)
-              }}
-            />
-          ) : (
-            <SOTARanking
-              papers={papers}
-              onSelectPaper={(paper) => setSelectedPaper(paper)}
-            />
-          )}
+          <SOTARanking
+            papers={papers}
+            onSelectPaper={(paper) => setSelectedPaper(paper)}
+          />
         </TabsContent>
         <TabsContent value="papers" className="mt-4">
           <div className="grid gap-3">
