@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import useSWR, { mutate } from "swr"
+import useSWR from "swr"
 import {
   Loader2, Play, CheckCircle, AlertCircle, RefreshCw, Shield, ArrowLeft, Lock,
   HeartPulse, BookOpen, Users, BarChart3, Bell, Database, Cloud, FileJson,
@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ARXIV_CATEGORIES } from "@/lib/arxiv-categories"
 import Link from "next/link"
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const baseFetcher = (url: string) => fetch(url).then((r) => r.json())
 
 interface GenerationLog {
   category: string
@@ -42,21 +42,28 @@ export default function AdminPage() {
   const [ingestLog, setIngestLog] = useState<string[]>([])
   const [ingestBatchSize, setIngestBatchSize] = useState("500")
 
+  // Authenticated fetcher that sends x-admin-key header
+  const adminFetcher = useCallback(
+    (url: string) =>
+      fetch(url, { headers: { "x-admin-key": password } }).then((r) => r.json()),
+    [password]
+  )
+
   const { data: stats, isLoading: statsLoading } = useSWR(
     authenticated ? "/api/admin/stats" : null,
-    fetcher,
+    adminFetcher,
     { refreshInterval: 15000 }
   )
 
   const { data: requests, isLoading: requestsLoading, mutate: mutateRequests } = useSWR(
     authenticated ? "/api/admin/requests" : null,
-    fetcher,
+    adminFetcher,
     { refreshInterval: 10000 }
   )
 
   const { data: statusData } = useSWR(
     authenticated ? "/api/admin/status" : null,
-    fetcher
+    adminFetcher
   )
 
   const handleLogin = () => {
@@ -103,8 +110,7 @@ export default function AdminPage() {
             : l
         )
       )
-      mutate("/api/admin/status")
-      mutate("/api/admin/stats")
+      mutateRequests()
     } catch (err) {
       setGenerationLogs((prev) =>
         prev.map((l) =>
@@ -138,7 +144,6 @@ export default function AdminPage() {
       } else {
         setSyncLog("Error: " + (result.error || "Failed"))
       }
-      mutate("/api/admin/stats")
     } catch (err) {
       setSyncLog("Error: " + String(err))
     }
@@ -150,13 +155,12 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/requests", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-key": password },
         body: JSON.stringify({ requestId }),
       })
       const result = await res.json()
       if (result.success) {
         mutateRequests()
-        mutate("/api/admin/stats")
       }
     } catch (err) {
       console.error("Process request error:", err)
@@ -261,7 +265,6 @@ export default function AdminPage() {
         ...prev,
         `DONE: ${totalInserted.toLocaleString()} inserted, ${totalUpdated.toLocaleString()} updated, ${totalErrors} errors out of ${totalPapers.toLocaleString()} total.`,
       ])
-      mutate("/api/admin/stats")
     } catch (err) {
       setIngestLog((prev) => [...prev, `FATAL ERROR: ${String(err)}`])
     }
@@ -328,7 +331,7 @@ export default function AdminPage() {
                 {pendingRequestCount} pending requests
               </Badge>
             )}
-            <Button size="sm" variant="outline" onClick={() => { mutate("/api/admin/stats"); mutateRequests() }} disabled={statsLoading}>
+            <Button size="sm" variant="outline" onClick={() => { mutateRequests() }} disabled={statsLoading}>
               <RefreshCw className={`mr-1 size-3 ${statsLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>

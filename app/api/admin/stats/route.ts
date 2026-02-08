@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/auth"
 import { sql } from "@/lib/db"
 
-export async function GET() {
+const ADMIN_PASSWORD = "Santander2728,2025*34erASsa35"
+
+export async function GET(request: Request) {
   try {
-    const session = await getSession()
-    if (!session?.user.isAdmin) {
+    const key = request.headers.get("x-admin-key") || ""
+    if (key !== ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

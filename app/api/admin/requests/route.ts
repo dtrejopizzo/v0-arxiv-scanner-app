@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server"
-import { getSession } from "@/lib/auth"
 import { sql } from "@/lib/db"
 import { generateText } from "ai"
 
+const ADMIN_PASSWORD = "Santander2728,2025*34erASsa35"
+
+function isAdminAuthorized(request: Request): boolean {
+  const key = request.headers.get("x-admin-key") || ""
+  return key === ADMIN_PASSWORD
+}
+
 // GET /api/admin/requests - Get pending analysis requests
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const session = await getSession()
-    if (!session?.user.isAdmin) {
+    if (!isAdminAuthorized(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -39,8 +44,7 @@ export async function GET() {
 // POST /api/admin/requests - Process a pending request
 export async function POST(request: Request) {
   try {
-    const session = await getSession()
-    if (!session?.user.isAdmin) {
+    if (!isAdminAuthorized(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

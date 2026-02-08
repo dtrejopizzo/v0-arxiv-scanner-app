@@ -1,14 +1,20 @@
-import { neon } from "@neondatabase/serverless"
+import { sql } from "@/lib/db"
 
-export async function GET() {
-  const sql = neon(process.env.DATABASE_URL!)
+const ADMIN_PASSWORD = "Santander2728,2025*34erASsa35"
+
+export async function GET(request: Request) {
+  const key = request.headers.get("x-admin-key") || ""
+  if (key !== ADMIN_PASSWORD) {
+    return Response.json({ error: "Forbidden" }, { status: 403 })
+  }
 
   const categories = await sql`
     SELECT 
       primary_category as category,
       COUNT(*) as total,
-      COUNT(CASE WHEN ai_bs_index IS NOT NULL THEN 1 END) as analyzed
+      COUNT(CASE WHEN analyzed_at IS NOT NULL THEN 1 END) as analyzed
     FROM papers
+    WHERE primary_category IS NOT NULL AND primary_category != ''
     GROUP BY primary_category
     ORDER BY COUNT(*) DESC
   `
