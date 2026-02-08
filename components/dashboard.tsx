@@ -2,8 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react"
 import useSWR from "swr"
-import { Loader2, Sparkles, BookOpen, Database, Clock, FlaskConical, Github, HeartPulse, Beaker } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Loader2, Sparkles, BookOpen, Database, Clock, FlaskConical, Github, HeartPulse } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -14,7 +13,7 @@ import { PaperDetail } from "@/components/paper-detail"
 import { getCachedDataUrl } from "@/lib/cache"
 import { isMedRxivCategory } from "@/lib/arxiv-categories"
 import type { CachedCategoryData } from "@/lib/cache"
-import type { AnalyzedPaper, PaperAnalysis } from "@/lib/types"
+import type { AnalyzedPaper } from "@/lib/types"
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -26,12 +25,10 @@ interface DashboardProps {
   selectedCategory: string | null
 }
 
-type DataSource = "cached" | "demo" | "none"
-
 export function Dashboard({ selectedCategory }: DashboardProps) {
   const [selectedPaper, setSelectedPaper] = useState<AnalyzedPaper | null>(null)
 
-  // Try to load cached data first (from public/data/analyses/)
+  // Load cached data from public/data/analyses/
   const cachedUrl = selectedCategory ? getCachedDataUrl(selectedCategory) : null
   const { data: cachedData, error: cachedError, isLoading: cachedLoading } = useSWR<CachedCategoryData>(
     cachedUrl,
@@ -39,46 +36,20 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
     { revalidateOnFocus: false, shouldRetryOnError: false }
   )
 
-  // Fall back to demo data API if no cached JSON file exists
-  const shouldFetchDemo = Boolean(selectedCategory && cachedError)
-  const demoApiUrl = useMemo(() => {
-    if (!shouldFetchDemo || !selectedCategory) return null
-    return `/api/demo?category=${encodeURIComponent(selectedCategory)}&count=20`
-  }, [shouldFetchDemo, selectedCategory])
-
-  const { data: demoData, isLoading: demoLoading } = useSWR<CachedCategoryData>(
-    demoApiUrl,
-    fetcher,
-    { revalidateOnFocus: false }
-  )
-
-  // Determine source and build papers list
-  const { papers, dataSource, generatedAt, sourceData } = useMemo(() => {
+  // Build papers list from cached data
+  const { papers, generatedAt, sourceData } = useMemo(() => {
     if (cachedData?.papers) {
       return {
         papers: cachedData.papers,
-        dataSource: "cached" as DataSource,
         generatedAt: cachedData.generatedAt,
         sourceData: cachedData,
       }
     }
-    if (demoData?.papers) {
-      return {
-        papers: demoData.papers,
-        dataSource: "demo" as DataSource,
-        generatedAt: demoData.generatedAt,
-        sourceData: demoData,
-      }
-    }
-    return { papers: [] as AnalyzedPaper[], dataSource: "none" as DataSource, generatedAt: null, sourceData: null }
-  }, [cachedData, demoData])
+    return { papers: [] as AnalyzedPaper[], generatedAt: null, sourceData: null }
+  }, [cachedData])
 
-  // No-op analyze (in demo/cached mode there's no live analysis)
-  const analyzePaper = useCallback(async (_paper: AnalyzedPaper) => {
-    // Analysis is pre-computed - no-op in published mode
-  }, [])
-
-  const isLoading = cachedLoading || (shouldFetchDemo && demoLoading)
+  // No-op analyze (all analysis is pre-computed)
+  const analyzePaper = useCallback(async (_paper: AnalyzedPaper) => {}, [])
 
   // ─── Welcome / Beta Screen ────────────────────────────────────
   if (!selectedCategory) {
@@ -137,7 +108,7 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
   }
 
   // ─── Loading ──────────────────────────────────────────────────
-  if (isLoading) {
+  if (cachedLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -150,14 +121,18 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
     )
   }
 
-  // ─── No data ──────────────────────────────────────────────────
-  if (papers.length === 0) {
+  // ─── No data available ────────────────────────────────────────
+  if (cachedError || papers.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-foreground">No data available</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            No analysis found for this category.
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted">
+            <Database className="size-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">No data available yet</h3>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+            Analysis for <span className="font-mono font-semibold">{selectedCategory}</span> has not been generated yet.
+            Use the admin panel to fetch papers and run AI analysis.
           </p>
         </div>
       </div>
@@ -166,8 +141,6 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
 
   const analyzedCount = papers.filter((p: AnalyzedPaper) => p.analysis).length
   const hasAnalyzed = analyzedCount > 0
-  const isCached = dataSource === "cached"
-  const isDemo = dataSource === "demo"
   const isMedrxiv = selectedCategory ? isMedRxivCategory(selectedCategory) : false
 
   return (
@@ -186,18 +159,10 @@ export function Dashboard({ selectedCategory }: DashboardProps) {
                 medRxiv
               </Badge>
             )}
-            {isCached && (
-              <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
-                <Database className="size-3" />
-                AI Analyzed
-              </Badge>
-            )}
-            {isDemo && (
-              <Badge variant="outline" className="gap-1 border-amber-300 bg-amber-50 text-amber-700">
-                <Beaker className="size-3" />
-                Demo Data
-              </Badge>
-            )}
+            <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
+              <Database className="size-3" />
+              AI Analyzed
+            </Badge>
           </div>
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3" />
