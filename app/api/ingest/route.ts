@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server"
-import { sql } from "@/lib/db"
+import { neon } from "@neondatabase/serverless"
+
+// Allow larger request body and longer timeout for bulk imports
+export const maxDuration = 300 // 5 minutes
 
 // POST /api/ingest - Bulk import papers from JSON
-// Expects body: { papers: Paper[] } where Paper matches the arXiv JSON format
+// Expects body: { papers: Paper[] } in the arXiv JSON format
 export async function POST(request: Request) {
   try {
-    // Simple admin auth via header
     const authHeader = request.headers.get("x-admin-key")
     if (authHeader !== process.env.ADMIN_API_KEY && authHeader !== "Santander2728,2025*34erASsa35") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const sql = neon(process.env.DATABASE_URL!)
     const body = await request.json()
     const papers = body.papers
 
@@ -21,32 +24,36 @@ export async function POST(request: Request) {
     let inserted = 0
     let updated = 0
     let errors = 0
-    const batchSize = 50
 
-    for (let i = 0; i < papers.length; i += batchSize) {
-      const batch = papers.slice(i, i + batchSize)
+    // Process in sub-batches of 25 for multi-row insert
+    const subBatchSize = 25
+
+    for (let i = 0; i < papers.length; i += subBatchSize) {
+      const batch = papers.slice(i, i + subBatchSize)
 
       for (const paper of batch) {
         try {
-          // Normalize the paper data from arXiv JSON format
-          const id = paper.id || paper.arxiv_id || ""
+          const id = paper.id || ""
           const title = (paper.title || "").replace(/\s+/g, " ").trim()
           const abstract = (paper.summary || paper.abstract || "").replace(/\s+/g, " ").trim()
           const authors = Array.isArray(paper.authors) ? paper.authors : []
+          // Handle single category string or array
           const categories = Array.isArray(paper.categories)
             ? paper.categories
-            : typeof paper.categories === "string"
-              ? paper.categories.split(" ")
-              : []
-          const primaryCategory = paper.primary_category || paper.primaryCategory || categories[0] || "unknown"
+            : typeof paper.category === "string"
+              ? [paper.category]
+              : typeof paper.categories === "string"
+                ? paper.categories.split(" ")
+                : []
+          const primaryCategory = paper.primary_category || paper.primaryCategory || paper.category || categories[0] || "unknown"
           const publishedDate = paper.published || paper.published_date || null
           const updatedDate = paper.updated || paper.updated_date || null
           const arxivUrl = paper.arxiv_url || paper.link || (id ? `https://arxiv.org/abs/${id}` : null)
-          const pdfUrl = paper.pdf_url || (id ? `https://arxiv.org/pdf/${id}` : null)
+          const pdfUrl = paper.pdf_url || paper.pdfLink || (id ? `https://arxiv.org/pdf/${id}` : null)
           const comment = paper.comment || null
           const journalRef = paper.journal_ref || paper.journalRef || null
           const doi = paper.doi || null
-          const source = paper.source || "arxiv"
+          const source = (paper.source || "arxiv").toLowerCase()
 
           if (!id || !title) {
             errors++
@@ -82,7 +89,6 @@ export async function POST(request: Request) {
           }
         } catch (err) {
           errors++
-          console.error("Paper insert error:", err)
         }
       }
     }
@@ -97,6 +103,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error("Ingest error:", error)
-    return NextResponse.json({ error: "Ingestion failed" }, { status: 500 })
+    return NextResponse.json({ error: "Ingestion failed: " + String(error) }, { status: 500 })
   }
 }

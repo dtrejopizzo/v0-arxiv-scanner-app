@@ -35,6 +35,12 @@ export default function AdminPage() {
   const [syncMaxResults, setSyncMaxResults] = useState("200")
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncLog, setSyncLog] = useState("")
+  // Ingest state
+  const [ingestFile, setIngestFile] = useState<File | null>(null)
+  const [isIngesting, setIsIngesting] = useState(false)
+  const [ingestProgress, setIngestProgress] = useState({ current: 0, total: 0, inserted: 0, updated: 0, errors: 0 })
+  const [ingestLog, setIngestLog] = useState<string[]>([])
+  const [ingestBatchSize, setIngestBatchSize] = useState("500")
 
   const { data: stats, isLoading: statsLoading } = useSWR(
     authenticated ? "/api/admin/stats" : null,
@@ -163,6 +169,103 @@ export default function AdminPage() {
     for (const req of pending) {
       await processRequest(req.id)
     }
+  }
+
+  // Bulk ingest from JSON file
+  const handleIngest = async () => {
+    if (!ingestFile) return
+    setIsIngesting(true)
+    setIngestLog([])
+    setIngestProgress({ current: 0, total: 0, inserted: 0, updated: 0, errors: 0 })
+
+    try {
+      const text = await ingestFile.text()
+      setIngestLog((prev) => [...prev, "Parsing JSON file..."])
+
+      let allPapers: Record<string, unknown>[] = []
+      const parsed = JSON.parse(text)
+
+      // Support both array and object-with-categories format
+      if (Array.isArray(parsed)) {
+        allPapers = parsed
+      } else if (typeof parsed === "object") {
+        // Object keyed by category or with a "papers" field
+        for (const key of Object.keys(parsed)) {
+          const val = parsed[key]
+          if (Array.isArray(val)) {
+            allPapers.push(...val)
+          }
+        }
+        if (allPapers.length === 0 && parsed.papers && Array.isArray(parsed.papers)) {
+          allPapers = parsed.papers
+        }
+      }
+
+      if (allPapers.length === 0) {
+        setIngestLog((prev) => [...prev, "ERROR: No papers found in file. Expected an array or an object with category keys."])
+        setIsIngesting(false)
+        return
+      }
+
+      const batchSz = parseInt(ingestBatchSize) || 500
+      const totalPapers = allPapers.length
+      setIngestProgress((p) => ({ ...p, total: totalPapers }))
+      setIngestLog((prev) => [...prev, `Found ${totalPapers.toLocaleString()} papers. Uploading in batches of ${batchSz}...`])
+
+      let totalInserted = 0
+      let totalUpdated = 0
+      let totalErrors = 0
+
+      for (let i = 0; i < totalPapers; i += batchSz) {
+        const batch = allPapers.slice(i, i + batchSz)
+        const batchNum = Math.floor(i / batchSz) + 1
+        const totalBatches = Math.ceil(totalPapers / batchSz)
+
+        try {
+          const res = await fetch("/api/ingest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-admin-key": password },
+            body: JSON.stringify({ papers: batch }),
+          })
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}))
+            throw new Error(errData.error || `HTTP ${res.status}`)
+          }
+
+          const result = await res.json()
+          totalInserted += result.inserted || 0
+          totalUpdated += result.updated || 0
+          totalErrors += result.errors || 0
+
+          setIngestProgress({
+            current: Math.min(i + batchSz, totalPapers),
+            total: totalPapers,
+            inserted: totalInserted,
+            updated: totalUpdated,
+            errors: totalErrors,
+          })
+
+          setIngestLog((prev) => [
+            ...prev,
+            `Batch ${batchNum}/${totalBatches}: +${result.inserted} new, ${result.updated} updated, ${result.errors} errors`,
+          ])
+        } catch (err) {
+          totalErrors += batch.length
+          setIngestProgress((p) => ({ ...p, current: Math.min(i + batchSz, totalPapers), errors: totalErrors }))
+          setIngestLog((prev) => [...prev, `Batch ${batchNum}/${totalBatches} FAILED: ${String(err)}`])
+        }
+      }
+
+      setIngestLog((prev) => [
+        ...prev,
+        `DONE: ${totalInserted.toLocaleString()} inserted, ${totalUpdated.toLocaleString()} updated, ${totalErrors} errors out of ${totalPapers.toLocaleString()} total.`,
+      ])
+      mutate("/api/admin/stats")
+    } catch (err) {
+      setIngestLog((prev) => [...prev, `FATAL ERROR: ${String(err)}`])
+    }
+    setIsIngesting(false)
   }
 
   // Password gate
@@ -298,6 +401,10 @@ export default function AdminPage() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="ingest" className="gap-1.5">
+              <Database className="size-3.5" />
+              Ingest JSON
+            </TabsTrigger>
             <TabsTrigger value="sync" className="gap-1.5">
               <Cloud className="size-3.5" />
               arXiv Sync
@@ -376,6 +483,74 @@ export default function AdminPage() {
                             Analyze
                           </Button>
                         )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ─── Ingest JSON Tab ──────────────────────────────── */}
+          <TabsContent value="ingest" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Bulk Paper Import</CardTitle>
+                <CardDescription>
+                  Upload a JSON file with papers. Supports arrays or objects keyed by category.
+                  Papers are uploaded in batches to avoid timeout issues. For 191K+ papers, use batch size 500.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">JSON file</label>
+                    <Input
+                      type="file"
+                      accept=".json"
+                      onChange={(e) => setIngestFile(e.target.files?.[0] || null)}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="w-32">
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Batch size</label>
+                    <Input
+                      type="number"
+                      value={ingestBatchSize}
+                      onChange={(e) => setIngestBatchSize(e.target.value)}
+                    />
+                  </div>
+                  <Button onClick={handleIngest} disabled={isIngesting || !ingestFile}>
+                    {isIngesting ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Database className="mr-1.5 size-4" />}
+                    {isIngesting ? "Ingesting..." : "Start Import"}
+                  </Button>
+                </div>
+
+                {ingestFile && !isIngesting && (
+                  <p className="text-xs text-muted-foreground">
+                    Selected: {ingestFile.name} ({(ingestFile.size / 1024 / 1024).toFixed(1)} MB)
+                  </p>
+                )}
+
+                {ingestProgress.total > 0 && (
+                  <div className="space-y-2">
+                    <Progress value={(ingestProgress.current / ingestProgress.total) * 100} className="h-2" />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{ingestProgress.current.toLocaleString()} / {ingestProgress.total.toLocaleString()} papers</span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-emerald-600">+{ingestProgress.inserted.toLocaleString()} new</span>
+                        <span className="text-blue-600">{ingestProgress.updated.toLocaleString()} updated</span>
+                        {ingestProgress.errors > 0 && <span className="text-red-600">{ingestProgress.errors} errors</span>}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {ingestLog.length > 0 && (
+                  <div className="max-h-64 overflow-y-auto rounded-md border bg-muted/30 p-3 font-mono text-xs">
+                    {ingestLog.map((line, i) => (
+                      <div key={i} className={`py-0.5 ${line.startsWith("DONE") ? "font-bold text-emerald-600" : line.startsWith("FATAL") || line.includes("FAILED") ? "text-red-500" : "text-muted-foreground"}`}>
+                        {line}
                       </div>
                     ))}
                   </div>
