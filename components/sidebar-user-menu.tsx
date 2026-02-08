@@ -161,9 +161,9 @@ export function SidebarUserMenu() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem className="gap-2" onClick={() => router.push("/upgrade")}>
+                <DropdownMenuItem className="gap-2" onClick={() => router.push("/billing")}>
                   <Sparkles className="size-4" />
-                  Upgrade to {user.plan === "free" ? "Starter" : "Pro"}
+                  Plans & Billing
                   <Badge variant="outline" className="ml-auto text-[10px]">
                     {planLabel}
                   </Badge>
@@ -174,10 +174,6 @@ export function SidebarUserMenu() {
                 <DropdownMenuItem className="gap-2" onClick={() => router.push("/account")}>
                   <BadgeCheck className="size-4" />
                   Account
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" onClick={() => router.push("/billing")}>
-                  <CreditCard className="size-4" />
-                  Billing
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="gap-2"

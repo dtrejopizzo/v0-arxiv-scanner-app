@@ -90,9 +90,9 @@ export async function POST(req: Request) {
         LIMIT 1
       `
       const usedToday = usage[0]?.analyses_count || 0
-      if (usedToday >= plan.analysisLimit) {
+      if (usedToday >= plan.dailyLimit) {
         return NextResponse.json({
-          error: `Daily limit reached (${plan.analysisLimit} analyses). Resets tomorrow.`,
+          error: `Daily limit reached (${plan.dailyLimit} analyses). Resets tomorrow.`,
           limitReached: true,
           canRequest: true,
         }, { status: 429 })
