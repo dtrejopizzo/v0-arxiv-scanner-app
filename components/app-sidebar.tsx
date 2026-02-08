@@ -91,19 +91,24 @@ function CategoryGroup({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenuSub>
-                  {cat.subcategories.map((sub) => (
-                    <SidebarMenuSubItem key={sub.code}>
-                      <SidebarMenuSubButton
-                        isActive={selectedCategory === sub.code}
-                        onClick={() => onSelectCategory(sub.code)}
-                      >
-                        <span className="font-mono text-[10px] text-muted-foreground">
-                          {sub.code.replace("medrxiv.", "")}
-                        </span>
-                        <span className="truncate">{sub.name}</span>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
+                  {cat.subcategories.map((sub) => {
+                    const ismedrxiv = sub.code.startsWith("medrxiv.")
+                    return (
+                      <SidebarMenuSubItem key={sub.code}>
+                        <SidebarMenuSubButton
+                          isActive={selectedCategory === sub.code}
+                          onClick={() => onSelectCategory(sub.code)}
+                        >
+                          {!ismedrxiv && (
+                            <span className="font-mono text-[10px] text-muted-foreground">
+                              {sub.code}
+                            </span>
+                          )}
+                          <span className="truncate">{sub.name}</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    )
+                  })}
                 </SidebarMenuSub>
               </CollapsibleContent>
             </SidebarMenuItem>
