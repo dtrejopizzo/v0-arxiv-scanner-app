@@ -4,9 +4,9 @@ import { generateText } from "ai"
 
 const ARXIV_API_BASE = "https://export.arxiv.org/api/query"
 const ADMIN_PASSWORD = "Santander2728,2025*34erASsa35"
-
-// Categories that get full AI analysis + ranking
 const RANKED_CATEGORIES = ["cs.AI", "cs.AR", "cs.CR"]
+
+export const maxDuration = 300
 
 interface ArxivEntry {
   id: string
@@ -44,17 +44,17 @@ function parseArxivXml(xml: string): ArxivEntry[] {
 
     const getAuthors = (s: string) => {
       const authors: string[] = []
-      const authorRegex = /<author>\s*<name>(.*?)<\/name>/g
+      const re = /<author>\s*<name>(.*?)<\/name>/g
       let am
-      while ((am = authorRegex.exec(s)) !== null) authors.push(am[1].trim())
+      while ((am = re.exec(s)) !== null) authors.push(am[1].trim())
       return authors
     }
 
     const getCategories = (s: string) => {
       const cats: string[] = []
-      const catRegex = /<category[^>]*term="([^"]+)"/g
+      const re = /<category[^>]*term="([^"]+)"/g
       let cm
-      while ((cm = catRegex.exec(s)) !== null) cats.push(cm[1])
+      while ((cm = re.exec(s)) !== null) cats.push(cm[1])
       return cats
     }
 
@@ -86,15 +86,12 @@ function parseArxivXml(xml: string): ArxivEntry[] {
 
 async function fetchLatest100(category: string): Promise<ArxivEntry[]> {
   const url = `${ARXIV_API_BASE}?search_query=cat:${encodeURIComponent(category)}&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100`
-
   const response = await fetch(url, {
     headers: { "User-Agent": "arXivScanner/1.0 (research tool)" },
     next: { revalidate: 0 },
   })
-
   if (!response.ok) throw new Error(`arXiv API error: ${response.status}`)
-  const xml = await response.text()
-  return parseArxivXml(xml)
+  return parseArxivXml(await response.text())
 }
 
 async function analyzeWithAI(paper: ArxivEntry) {
@@ -135,8 +132,7 @@ Abstract: ${paper.summary.slice(0, 1200)}`,
       if (m) jsonStr = m[0]
     }
     const parsed = JSON.parse(jsonStr)
-    // Enforce isSOTA rule
-    if (parsed.sotaScore < 7) parsed.isSOTA = false
+    if ((parsed.sotaScore ?? 0) < 7) parsed.isSOTA = false
     return parsed
   } catch {
     return null
@@ -144,7 +140,6 @@ Abstract: ${paper.summary.slice(0, 1200)}`,
 }
 
 async function computeAndSaveRanking(category: string, today: string) {
-  // Get top 10 by sota_score from today's daily_papers
   const top10 = await sql`
     SELECT id, title, authors, published_date, arxiv_url,
            sota_score, bs_index, one_liner, expert_commentary
@@ -155,13 +150,10 @@ async function computeAndSaveRanking(category: string, today: string) {
     ORDER BY sota_score DESC, bs_index ASC
     LIMIT 10
   `
-
   if (top10.length === 0) return
 
-  // Delete today's old ranking for this category
   await sql`DELETE FROM category_rankings WHERE category = ${category} AND rank_date = ${today}::date`
 
-  // Insert new ranking
   for (let i = 0; i < top10.length; i++) {
     const p = top10[i]
     await sql`
@@ -178,7 +170,6 @@ async function computeAndSaveRanking(category: string, today: string) {
   }
 }
 
-// POST /api/sync/arxiv
 export async function POST(request: Request) {
   try {
     const key = request.headers.get("x-admin-key") || ""
@@ -191,9 +182,17 @@ export async function POST(request: Request) {
     if (!category) return NextResponse.json({ error: "category is required" }, { status: 400 })
 
     const today = new Date().toISOString().split("T")[0]
-    const isRankedCategory = RANKED_CATEGORIES.includes(category)
+    const isRanked = RANKED_CATEGORIES.includes(category)
 
-    // Upsert batch record
+    // Check if already synced today
+    const existing = await sql`
+      SELECT status FROM daily_fetch_batches
+      WHERE category = ${category} AND fetch_date = ${today}::date
+    `
+    if (existing.length > 0 && existing[0].status === "completed") {
+      return NextResponse.json({ success: true, category, skipped: true, reason: "already synced today" })
+    }
+
     await sql`
       INSERT INTO daily_fetch_batches (category, fetch_date, status)
       VALUES (${category}, ${today}::date, 'running')
@@ -201,13 +200,10 @@ export async function POST(request: Request) {
     `
 
     try {
-      // 1. Fetch latest 100 papers from arXiv
       const entries = await fetchLatest100(category)
 
-      // 2. Delete today's existing papers for this category (fresh fetch)
       await sql`DELETE FROM daily_papers WHERE category = ${category} AND fetch_date = ${today}::date`
 
-      // 3. Insert all 100 papers
       for (const e of entries) {
         await sql`
           INSERT INTO daily_papers (id, category, fetch_date, title, abstract, authors, published_date, arxiv_url, pdf_url)
@@ -222,32 +218,30 @@ export async function POST(request: Request) {
 
       let papersAnalyzed = 0
 
-      // 4. Analyze ALL 100 papers with AI (only for ranked categories, others get analysis too)
-      for (const e of entries) {
-        const analysis = await analyzeWithAI(e)
-        if (analysis) {
-          await sql`
-            UPDATE daily_papers SET
-              bs_index          = ${Math.min(10, Math.max(0, Math.round(analysis.bsIndex ?? 5)))},
-              sota_score        = ${Math.min(10, Math.max(0, Math.round(analysis.sotaScore ?? 3)))},
-              is_sota           = ${analysis.isSOTA === true && (analysis.sotaScore ?? 0) >= 7},
-              one_liner         = ${analysis.oneLiner ?? ""},
-              core_claims       = ${analysis.coreClaims ?? []},
-              red_flags         = ${analysis.redFlags ?? []},
-              expert_commentary = ${analysis.expertCommentary ?? ""},
-              analyzed_at       = NOW()
-            WHERE id = ${e.id} AND category = ${category} AND fetch_date = ${today}::date
-          `
-          papersAnalyzed++
+      // AI analysis ONLY for ranked categories
+      if (isRanked) {
+        for (const e of entries) {
+          const analysis = await analyzeWithAI(e)
+          if (analysis) {
+            await sql`
+              UPDATE daily_papers SET
+                bs_index          = ${Math.min(10, Math.max(0, Math.round(analysis.bsIndex ?? 5)))},
+                sota_score        = ${Math.min(10, Math.max(0, Math.round(analysis.sotaScore ?? 3)))},
+                is_sota           = ${analysis.isSOTA === true && (analysis.sotaScore ?? 0) >= 7},
+                one_liner         = ${analysis.oneLiner ?? ""},
+                core_claims       = ${analysis.coreClaims ?? []},
+                red_flags         = ${analysis.redFlags ?? []},
+                expert_commentary = ${analysis.expertCommentary ?? ""},
+                analyzed_at       = NOW()
+              WHERE id = ${e.id} AND category = ${category} AND fetch_date = ${today}::date
+            `
+            papersAnalyzed++
+          }
+          await new Promise((r) => setTimeout(r, 150))
         }
-        // Small delay to avoid rate limits
-        await new Promise((r) => setTimeout(r, 200))
+        await computeAndSaveRanking(category, today)
       }
 
-      // 5. Compute top-10 ranking (all categories get one, but only ranked 3 are shown in UI)
-      await computeAndSaveRanking(category, today)
-
-      // 6. Update batch record
       await sql`
         UPDATE daily_fetch_batches SET
           status = 'completed',
@@ -262,7 +256,7 @@ export async function POST(request: Request) {
         category,
         papersFound: entries.length,
         papersAnalyzed,
-        isRankedCategory,
+        isRanked,
         today,
       })
     } catch (err) {
