@@ -2,8 +2,11 @@ import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 import { generateText } from "ai"
 
-// arXiv OAI-PMH / Atom API for fetching new papers
 const ARXIV_API_BASE = "https://export.arxiv.org/api/query"
+const ADMIN_PASSWORD = "Santander2728,2025*34erASsa35"
+
+// Categories that get full AI analysis + ranking
+const RANKED_CATEGORIES = ["cs.AI", "cs.AR", "cs.CR"]
 
 interface ArxivEntry {
   id: string
@@ -16,9 +19,6 @@ interface ArxivEntry {
   updated: string
   arxivUrl: string
   pdfUrl: string
-  comment: string | null
-  journalRef: string | null
-  doi: string | null
 }
 
 function parseArxivXml(xml: string): ArxivEntry[] {
@@ -32,7 +32,6 @@ function parseArxivXml(xml: string): ArxivEntry[] {
     const getId = (s: string) => {
       const m = s.match(/<id>(.*?)<\/id>/)
       if (!m) return ""
-      // Extract just the arxiv ID from the URL
       const url = m[1].trim()
       const idMatch = url.match(/abs\/(.+)$/)
       return idMatch ? idMatch[1] : url
@@ -47,9 +46,7 @@ function parseArxivXml(xml: string): ArxivEntry[] {
       const authors: string[] = []
       const authorRegex = /<author>\s*<name>(.*?)<\/name>/g
       let am
-      while ((am = authorRegex.exec(s)) !== null) {
-        authors.push(am[1].trim())
-      }
+      while ((am = authorRegex.exec(s)) !== null) authors.push(am[1].trim())
       return authors
     }
 
@@ -57,9 +54,7 @@ function parseArxivXml(xml: string): ArxivEntry[] {
       const cats: string[] = []
       const catRegex = /<category[^>]*term="([^"]+)"/g
       let cm
-      while ((cm = catRegex.exec(s)) !== null) {
-        cats.push(cm[1])
-      }
+      while ((cm = catRegex.exec(s)) !== null) cats.push(cm[1])
       return cats
     }
 
@@ -68,216 +63,216 @@ function parseArxivXml(xml: string): ArxivEntry[] {
       return m ? m[1] : ""
     }
 
-    const getLink = (s: string, type: string) => {
-      const regex = new RegExp(`<link[^>]*title="${type}"[^>]*href="([^"]+)"`)
-      const m = s.match(regex)
-      return m ? m[1] : ""
-    }
-
     const id = getId(entry)
     if (!id) continue
 
+    const cats = getCategories(entry)
     entries.push({
       id,
       title: getTag(entry, "title"),
       summary: getTag(entry, "summary"),
       authors: getAuthors(entry),
-      categories: getCategories(entry),
-      primaryCategory: getPrimaryCategory(entry) || getCategories(entry)[0] || "",
+      categories: cats,
+      primaryCategory: getPrimaryCategory(entry) || cats[0] || "",
       published: getTag(entry, "published"),
       updated: getTag(entry, "updated"),
       arxivUrl: `https://arxiv.org/abs/${id}`,
-      pdfUrl: getLink(entry, "pdf") || `https://arxiv.org/pdf/${id}`,
-      comment: getTag(entry, "arxiv:comment") || null,
-      journalRef: getTag(entry, "arxiv:journal_ref") || null,
-      doi: getTag(entry, "arxiv:doi") || null,
+      pdfUrl: `https://arxiv.org/pdf/${id}`,
     })
   }
 
   return entries
 }
 
-async function fetchNewPapers(category: string, maxResults: number = 200): Promise<ArxivEntry[]> {
-  const allEntries: ArxivEntry[] = []
-  const batchSize = Math.min(maxResults, 1000)
-  let start = 0
+async function fetchLatest100(category: string): Promise<ArxivEntry[]> {
+  const url = `${ARXIV_API_BASE}?search_query=cat:${encodeURIComponent(category)}&sortBy=submittedDate&sortOrder=descending&start=0&max_results=100`
 
-  while (start < maxResults) {
-    const currentBatch = Math.min(batchSize, maxResults - start)
-    const url = `${ARXIV_API_BASE}?search_query=cat:${encodeURIComponent(category)}&sortBy=submittedDate&sortOrder=descending&start=${start}&max_results=${currentBatch}`
+  const response = await fetch(url, {
+    headers: { "User-Agent": "arXivScanner/1.0 (research tool)" },
+    next: { revalidate: 0 },
+  })
 
-    const response = await fetch(url, {
-      headers: { "User-Agent": "arXivScanner/1.0 (research tool)" },
-    })
-
-    if (!response.ok) {
-      console.error(`arXiv API error for ${category}: ${response.status}`)
-      break
-    }
-
-    const xml = await response.text()
-    const entries = parseArxivXml(xml)
-
-    if (entries.length === 0) break
-    allEntries.push(...entries)
-
-    if (entries.length < currentBatch) break // No more results
-    start += currentBatch
-
-    // Rate limit: arXiv asks for 3 second delay between requests
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-  }
-
-  return allEntries
+  if (!response.ok) throw new Error(`arXiv API error: ${response.status}`)
+  const xml = await response.text()
+  return parseArxivXml(xml)
 }
 
-async function analyzePaperWithAI(paper: ArxivEntry) {
+async function analyzeWithAI(paper: ArxivEntry) {
   try {
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
-      system: `You are a ruthlessly honest senior researcher. Return ONLY valid JSON. No markdown.
+      system: `You are a ruthlessly honest senior researcher reviewing papers for top venues (NeurIPS, ICML, Nature, CVPR, ACL). Return ONLY valid JSON, no markdown.
 
-CALIBRATION (follow strictly):
-- bsIndex: Most papers 3-6. Only exceptional rigor gets 0-1. Hype without substance: 7-10.
-- sotaScore: BE STINGY. 0-2 = incremental (~60% of papers). 3-4 = solid but expected (~25%). 5-6 = genuinely interesting (~10%). 7-8 = significant advance (~4%). 9-10 = field-defining (~1%).
-- isSOTA: TRUE ONLY if sotaScore >= 7. Most papers are NOT SOTA.
-- redFlags: EVERY paper has 2-4 weaknesses. Find them.
-- expertCommentary: Brutally honest, 2-3 sentences.
-- oneLiner: No hype, just what it actually does.
+CALIBRATION — follow strictly:
+- bsIndex 0-10: exceptional rigor=0-1, solid honest work=2-4, average=5-6, unsupported hype=7-8, absurd claims=9-10
+- sotaScore 0-10 — BE EXTREMELY STINGY:
+  * 0-2: incremental or derivative (~60% of all papers)
+  * 3-4: solid but expected contribution (~25%)
+  * 5-6: genuinely interesting, novel angle (~10%)
+  * 7-8: significant advance, spotlight/oral quality (~4%)
+  * 9-10: field-defining, 1-2 per subfield per year (~1%)
+- isSOTA: TRUE ONLY if sotaScore >= 7. When in doubt, FALSE.
+- redFlags: EVERY paper has 2-4 weaknesses. No exceptions.
+- expertCommentary: 2-3 sentences, brutally honest. What is actually new vs recycled?
+- oneLiner: No hype. What does this paper actually do?
 
-You are a filter. If you rate everything highly, you are useless.`,
-      prompt: `Return ONLY JSON: {"bsIndex":<0-10>,"coreClaims":["..."],"redFlags":["..."],"expertCommentary":"...","sotaScore":<0-10>,"isSOTA":<bool>,"oneLiner":"..."}
+If you rate everything highly, you are useless. You are a filter.`,
+      prompt: `Return ONLY JSON:
+{"bsIndex":<int 0-10>,"sotaScore":<int 0-10>,"isSOTA":<bool>,"oneLiner":"<str>","coreClaims":["<str>"],"redFlags":["<str>"],"expertCommentary":"<str>"}
 
 Title: ${paper.title}
-Abstract: ${paper.summary}
-Authors: ${paper.authors.join(", ")}
-Categories: ${paper.categories.join(", ")}`,
-      temperature: 0.3,
+Authors: ${paper.authors.slice(0, 5).join(", ")}
+Categories: ${paper.categories.join(", ")}
+Abstract: ${paper.summary.slice(0, 1200)}`,
+      temperature: 0.2,
     })
 
     let jsonStr = text.trim()
-    const codeBlock = jsonStr.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/)
-    if (codeBlock) jsonStr = codeBlock[1]
+    const block = jsonStr.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/)
+    if (block) jsonStr = block[1]
     else {
-      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/)
-      if (jsonMatch) jsonStr = jsonMatch[0]
+      const m = jsonStr.match(/\{[\s\S]*\}/)
+      if (m) jsonStr = m[0]
     }
-
-    return JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonStr)
+    // Enforce isSOTA rule
+    if (parsed.sotaScore < 7) parsed.isSOTA = false
+    return parsed
   } catch {
     return null
   }
 }
 
-// POST /api/sync/arxiv - Sync new papers for a category
+async function computeAndSaveRanking(category: string, today: string) {
+  // Get top 10 by sota_score from today's daily_papers
+  const top10 = await sql`
+    SELECT id, title, authors, published_date, arxiv_url,
+           sota_score, bs_index, one_liner, expert_commentary
+    FROM daily_papers
+    WHERE category = ${category}
+      AND fetch_date = ${today}::date
+      AND sota_score IS NOT NULL
+    ORDER BY sota_score DESC, bs_index ASC
+    LIMIT 10
+  `
+
+  if (top10.length === 0) return
+
+  // Delete today's old ranking for this category
+  await sql`DELETE FROM category_rankings WHERE category = ${category} AND rank_date = ${today}::date`
+
+  // Insert new ranking
+  for (let i = 0; i < top10.length; i++) {
+    const p = top10[i]
+    await sql`
+      INSERT INTO category_rankings (
+        category, rank_date, rank_position, paper_id, fetch_date,
+        sota_score, bs_index, title, authors, published_date,
+        arxiv_url, one_liner, expert_commentary
+      ) VALUES (
+        ${category}, ${today}::date, ${i + 1}, ${p.id}, ${today}::date,
+        ${p.sota_score}, ${p.bs_index}, ${p.title}, ${p.authors},
+        ${p.published_date}, ${p.arxiv_url}, ${p.one_liner}, ${p.expert_commentary}
+      )
+    `
+  }
+}
+
+// POST /api/sync/arxiv
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get("x-admin-key")
-    if (authHeader !== process.env.ADMIN_API_KEY && authHeader !== "Santander2728,2025*34erASsa35") {
+    const key = request.headers.get("x-admin-key") || ""
+    if (key !== ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
-    const { category, maxResults = 200, analyzeWithAI = true } = body
+    const { category } = body
+    if (!category) return NextResponse.json({ error: "category is required" }, { status: 400 })
 
-    if (!category) {
-      return NextResponse.json({ error: "category is required" }, { status: 400 })
-    }
+    const today = new Date().toISOString().split("T")[0]
+    const isRankedCategory = RANKED_CATEGORIES.includes(category)
 
-    // Create sync log
-    const logRows = await sql`
-      INSERT INTO sync_logs (category, source, status)
-      VALUES (${category}, 'arxiv', 'running')
-      RETURNING id
+    // Upsert batch record
+    await sql`
+      INSERT INTO daily_fetch_batches (category, fetch_date, status)
+      VALUES (${category}, ${today}::date, 'running')
+      ON CONFLICT (category, fetch_date) DO UPDATE SET status = 'running', started_at = NOW()
     `
-    const syncLogId = logRows[0].id
 
     try {
-      // Fetch from arXiv
-      const entries = await fetchNewPapers(category, maxResults)
+      // 1. Fetch latest 100 papers from arXiv
+      const entries = await fetchLatest100(category)
 
-      let papersNew = 0
-      let papersUpdated = 0
-      let papersAnalyzed = 0
+      // 2. Delete today's existing papers for this category (fresh fetch)
+      await sql`DELETE FROM daily_papers WHERE category = ${category} AND fetch_date = ${today}::date`
 
-      for (const entry of entries) {
-        // Check if paper exists
-        const existing = await sql`SELECT id, analyzed_at FROM papers WHERE id = ${entry.id} LIMIT 1`
-
-        if (existing.length === 0) {
-          // New paper - insert
-          await sql`
-            INSERT INTO papers (
-              id, title, abstract, authors, categories, primary_category,
-              published_date, updated_date, arxiv_url, pdf_url, comment,
-              journal_ref, doi, source
-            ) VALUES (
-              ${entry.id}, ${entry.title}, ${entry.summary}, ${entry.authors},
-              ${entry.categories}, ${entry.primaryCategory}, ${entry.published},
-              ${entry.updated}, ${entry.arxivUrl}, ${entry.pdfUrl},
-              ${entry.comment}, ${entry.journalRef}, ${entry.doi}, 'arxiv'
-            )
-          `
-          papersNew++
-
-          // Analyze with AI if requested
-          if (analyzeWithAI) {
-            const analysis = await analyzePaperWithAI(entry)
-            if (analysis) {
-              await sql`
-                UPDATE papers SET
-                  bs_index = ${Math.min(10, Math.max(0, analysis.bsIndex || 5))},
-                  sota_score = ${Math.min(10, Math.max(0, analysis.sotaScore || 5))},
-                  is_sota = ${analysis.isSOTA || false},
-                  one_liner = ${analysis.oneLiner || entry.title},
-                  core_claims = ${analysis.coreClaims || []},
-                  red_flags = ${analysis.redFlags || []},
-                  expert_commentary = ${analysis.expertCommentary || ""},
-                  analyzed_at = NOW(),
-                  analyzed_by = 'system'
-                WHERE id = ${entry.id}
-              `
-              papersAnalyzed++
-            }
-          }
-        } else {
-          papersUpdated++
-        }
+      // 3. Insert all 100 papers
+      for (const e of entries) {
+        await sql`
+          INSERT INTO daily_papers (id, category, fetch_date, title, abstract, authors, published_date, arxiv_url, pdf_url)
+          VALUES (
+            ${e.id}, ${category}, ${today}::date,
+            ${e.title}, ${e.summary}, ${e.authors},
+            ${e.published || null}, ${e.arxivUrl}, ${e.pdfUrl}
+          )
+          ON CONFLICT (id, category, fetch_date) DO NOTHING
+        `
       }
 
-      // Update sync log
+      let papersAnalyzed = 0
+
+      // 4. Analyze ALL 100 papers with AI (only for ranked categories, others get analysis too)
+      for (const e of entries) {
+        const analysis = await analyzeWithAI(e)
+        if (analysis) {
+          await sql`
+            UPDATE daily_papers SET
+              bs_index          = ${Math.min(10, Math.max(0, Math.round(analysis.bsIndex ?? 5)))},
+              sota_score        = ${Math.min(10, Math.max(0, Math.round(analysis.sotaScore ?? 3)))},
+              is_sota           = ${analysis.isSOTA === true && (analysis.sotaScore ?? 0) >= 7},
+              one_liner         = ${analysis.oneLiner ?? ""},
+              core_claims       = ${analysis.coreClaims ?? []},
+              red_flags         = ${analysis.redFlags ?? []},
+              expert_commentary = ${analysis.expertCommentary ?? ""},
+              analyzed_at       = NOW()
+            WHERE id = ${e.id} AND category = ${category} AND fetch_date = ${today}::date
+          `
+          papersAnalyzed++
+        }
+        // Small delay to avoid rate limits
+        await new Promise((r) => setTimeout(r, 200))
+      }
+
+      // 5. Compute top-10 ranking (all categories get one, but only ranked 3 are shown in UI)
+      await computeAndSaveRanking(category, today)
+
+      // 6. Update batch record
       await sql`
-        UPDATE sync_logs SET
+        UPDATE daily_fetch_batches SET
           status = 'completed',
-          papers_found = ${entries.length},
-          papers_new = ${papersNew},
-          papers_updated = ${papersUpdated},
+          papers_fetched = ${entries.length},
           papers_analyzed = ${papersAnalyzed},
-          completed_at = NOW(),
-          duration_seconds = EXTRACT(EPOCH FROM (NOW() - started_at))::int
-        WHERE id = ${syncLogId}
+          completed_at = NOW()
+        WHERE category = ${category} AND fetch_date = ${today}::date
       `
 
       return NextResponse.json({
         success: true,
         category,
         papersFound: entries.length,
-        papersNew,
-        papersUpdated,
         papersAnalyzed,
+        isRankedCategory,
+        today,
       })
-    } catch (error) {
+    } catch (err) {
       await sql`
-        UPDATE sync_logs SET
-          status = 'failed',
-          error_message = ${String(error)},
-          completed_at = NOW()
-        WHERE id = ${syncLogId}
+        UPDATE daily_fetch_batches SET status = 'failed', error_message = ${String(err)}, completed_at = NOW()
+        WHERE category = ${category} AND fetch_date = ${today}::date
       `
-      throw error
+      throw err
     }
-  } catch (error) {
-    console.error("Sync error:", error)
-    return NextResponse.json({ error: "Sync failed: " + String(error) }, { status: 500 })
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }

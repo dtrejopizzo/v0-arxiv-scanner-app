@@ -5,7 +5,7 @@ import useSWR from "swr"
 import {
   Loader2, Play, CheckCircle, AlertCircle, RefreshCw, Shield, ArrowLeft, Lock,
   HeartPulse, BookOpen, Users, BarChart3, Bell, Database, Cloud, FileJson,
-  Clock, X, Zap,
+  Clock, X, Zap, Trophy,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -127,20 +127,25 @@ export default function AdminPage() {
     setIsGenerating(false)
   }, [generateCategory])
 
-  // Sync from arXiv
-  const handleSync = async () => {
-    if (!syncCategory.trim()) return
+  // Sync from arXiv — single category or the 3 ranked ones
+  const handleSync = async (categoriesToSync?: string[]) => {
+    const cats = categoriesToSync || (syncCategory.trim() ? [syncCategory.trim()] : ["cs.AI", "cs.AR", "cs.CR"])
     setIsSyncing(true)
-    setSyncLog("Starting sync for " + syncCategory + "...")
+    setSyncLog(`Starting sync for: ${cats.join(", ")}...`)
     try {
-      const res = await fetch("/api/sync/arxiv", {
+      const res = await fetch("/api/admin/trigger-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-key": password },
-        body: JSON.stringify({ category: syncCategory, maxResults: parseInt(syncMaxResults), analyzeWithAI: true }),
+        body: JSON.stringify({ categories: cats }),
       })
       const result = await res.json()
       if (result.success) {
-        setSyncLog(`Done: ${result.papersFound} found, ${result.papersNew} new, ${result.papersAnalyzed} analyzed`)
+        const summary = result.results
+          .map((r: { category: string; status: string; papersAnalyzed?: number }) =>
+            `${r.category}: ${r.status === "ok" ? `${r.papersAnalyzed} analyzed` : "error"}`
+          )
+          .join(" | ")
+        setSyncLog(`Done. ${summary}`)
       } else {
         setSyncLog("Error: " + (result.error || "Failed"))
       }
@@ -564,81 +569,63 @@ export default function AdminPage() {
 
           {/* ─── arXiv Sync Tab ────────────────────────────────── */}
           <TabsContent value="sync" className="space-y-4">
-            <Card>
+            {/* Quick-sync ranked categories */}
+            <Card className="border-amber-200 bg-amber-50/40">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Manual arXiv Sync</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Trophy className="size-4 text-amber-500" />
+                  Sync Ranked Categories Now
+                </CardTitle>
                 <CardDescription>
-                  Fetch new papers from arXiv API for a category. Papers are automatically analyzed with AI.
-                  arXiv updates Mon-Thu ~20:00 EST. A cron job runs automatically at 21:00 EST.
+                  Fetches the latest 100 papers for <strong>cs.AI, cs.AR, cs.CR</strong>, runs full AI analysis,
+                  and computes the top-10 SOTA ranking for each. Takes ~5-10 minutes.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
+                <Button
+                  onClick={() => handleSync(["cs.AI", "cs.AR", "cs.CR"])}
+                  disabled={isSyncing}
+                  className="bg-amber-500 text-white hover:bg-amber-600"
+                >
+                  {isSyncing
+                    ? <><Loader2 className="mr-1.5 size-4 animate-spin" />Syncing...</>
+                    : <><Cloud className="mr-1.5 size-4" />Sync cs.AI + cs.AR + cs.CR</>}
+                </Button>
+                {syncLog && (
+                  <div className="mt-3 flex items-start gap-2 rounded-md border bg-white px-3 py-2 text-sm">
+                    {isSyncing
+                      ? <Loader2 className="mt-0.5 size-3.5 animate-spin shrink-0" />
+                      : <CheckCircle className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />}
+                    <span className="text-muted-foreground">{syncLog}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Custom single-category sync */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Sync Any Category</CardTitle>
+                <CardDescription>
+                  Fetch and analyze the latest 100 papers for any arXiv category.
+                  The daily cron runs automatically at 02:00 UTC (Tue-Fri).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="flex items-end gap-3">
                   <div className="flex-1">
-                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Category (e.g. cs.AI)</label>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Category (e.g. cs.LG)</label>
                     <Input
-                      placeholder="cs.AI"
+                      placeholder="cs.LG"
                       value={syncCategory}
                       onChange={(e) => setSyncCategory(e.target.value)}
                     />
                   </div>
-                  <div className="w-28">
-                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Max results</label>
-                    <Input
-                      type="number"
-                      value={syncMaxResults}
-                      onChange={(e) => setSyncMaxResults(e.target.value)}
-                    />
-                  </div>
-                  <Button onClick={handleSync} disabled={isSyncing || !syncCategory.trim()}>
+                  <Button onClick={() => handleSync()} disabled={isSyncing || !syncCategory.trim()} variant="outline">
                     {isSyncing ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Cloud className="mr-1.5 size-4" />}
                     {isSyncing ? "Syncing..." : "Sync"}
                   </Button>
                 </div>
-                {syncLog && (
-                  <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm">
-                    {isSyncing ? <Loader2 className="size-3.5 animate-spin shrink-0" /> : <CheckCircle className="size-3.5 shrink-0 text-emerald-500" />}
-                    <span className="text-muted-foreground">{syncLog}</span>
-                  </div>
-                )}
-                {/* Recent syncs */}
-                {stats?.recentSyncs?.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Recent Syncs</p>
-                    <div className="max-h-40 space-y-1.5 overflow-y-auto">
-                      {stats.recentSyncs.map((s: {
-                        id: string
-                        category: string
-                        status: string
-                        papers_found: number
-                        papers_new: number
-                        papers_analyzed: number
-                        started_at: string
-                        duration_seconds: number
-                      }) => (
-                        <div key={s.id} className="flex items-center gap-2 text-xs">
-                          {s.status === "completed" ? (
-                            <CheckCircle className="size-3 text-emerald-500" />
-                          ) : s.status === "failed" ? (
-                            <X className="size-3 text-red-500" />
-                          ) : (
-                            <Clock className="size-3 text-muted-foreground" />
-                          )}
-                          <span className="font-mono text-muted-foreground">{s.category}</span>
-                          <span className="text-muted-foreground">
-                            {s.papers_found || 0} found, {s.papers_new || 0} new, {s.papers_analyzed || 0} analyzed
-                          </span>
-                          {s.duration_seconds && (
-                            <span className="text-muted-foreground">({s.duration_seconds}s)</span>
-                          )}
-                          <span className="ml-auto text-muted-foreground">
-                            {new Date(s.started_at).toLocaleString()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
