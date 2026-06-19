@@ -33,7 +33,7 @@ function parseXml(xml) {
     const cats = []; const cr = /<category[^>]*term="([^"]+)"/g; let cm
     while ((cm = cr.exec(e)) !== null) cats.push(cm[1])
     const primary = (e.match(/<arxiv:primary_category[^>]*term="([^"]+)"/) || [])[1] || cats[0] || ""
-    entries.push({ id, title: tag("title"), summary: tag("summary"), authors, categories: cats, primaryCategory: primary, published: tag("published"), arxivUrl: `https://arxiv.org/abs/${id}`, pdfUrl: `https://arxiv.org/pdf/${id}` })
+    entries.push({ id, title: tag("title"), summary: tag("summary"), authors, categories: cats, primaryCategory: primary, published: tag("published"), arxivUrl: `https://arxiv.org/abs/${id}`, pdfUrl: `https://arxiv.org/pdf/${id}`, texUrl: `https://arxiv.org/src/${id}` })
   }
   return entries
 }
@@ -143,11 +143,11 @@ async function syncCategory(category) {
     return
   }
 
-  await sql`DELETE FROM daily_papers WHERE category=${category} AND fetch_date=${TODAY}::date`
+    await sql`DELETE FROM daily_papers WHERE category=${category} AND fetch_date=${TODAY}::date`
   for (const e of entries) {
     await sql`
-      INSERT INTO daily_papers (id,category,fetch_date,title,abstract,authors,published_date,arxiv_url,pdf_url)
-      VALUES (${e.id},${category},${TODAY}::date,${e.title},${e.summary},${e.authors},${e.published||null},${e.arxivUrl},${e.pdfUrl})
+      INSERT INTO daily_papers (id,category,fetch_date,title,abstract,authors,published_date,arxiv_url,pdf_url,tex_url)
+      VALUES (${e.id},${category},${TODAY}::date,${e.title},${e.summary},${e.authors},${e.published||null},${e.arxivUrl},${e.pdfUrl},${e.texUrl})
       ON CONFLICT (id,category,fetch_date) DO NOTHING
     `
   }
@@ -191,17 +191,20 @@ async function syncCategory(category) {
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
+// Accept category list from CLI args: node sync-now.mjs cs.AI cs.AR
+// Default: all RANKED categories
+const cliCats = process.argv.slice(2)
+const categoriesToSync = cliCats.length > 0 ? cliCats : RANKED
+
 console.log(`=== arXiv Sync — ${TODAY} ===`)
 console.log(`Ranked categories (with AI): ${RANKED.join(", ")}`)
-console.log(`Starting cs.AI, cs.AR, cs.CR first...`)
+console.log(`Syncing: ${categoriesToSync.join(", ")}`)
 
 try {
-  // Run the 3 ranked categories first, sequentially
-  for (const cat of RANKED) {
+  for (const cat of categoriesToSync) {
     await syncCategory(cat)
   }
-  console.log("\n=== All ranked categories synced! ===")
-  console.log("The app now has data for cs.AI, cs.AR and cs.CR with full AI analysis and rankings.")
+  console.log(`\n=== Done: synced ${categoriesToSync.join(", ")} ===`)
 } catch (err) {
   console.error("Fatal:", err)
   process.exit(1)

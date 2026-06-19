@@ -19,6 +19,7 @@ interface ArxivEntry {
   updated: string
   arxivUrl: string
   pdfUrl: string
+  texUrl: string
 }
 
 function parseArxivXml(xml: string): ArxivEntry[] {
@@ -78,6 +79,7 @@ function parseArxivXml(xml: string): ArxivEntry[] {
       updated: getTag(entry, "updated"),
       arxivUrl: `https://arxiv.org/abs/${id}`,
       pdfUrl: `https://arxiv.org/pdf/${id}`,
+      texUrl: `https://arxiv.org/src/${id}`,
     })
   }
 
@@ -206,11 +208,11 @@ export async function POST(request: Request) {
 
       for (const e of entries) {
         await sql`
-          INSERT INTO daily_papers (id, category, fetch_date, title, abstract, authors, published_date, arxiv_url, pdf_url)
+          INSERT INTO daily_papers (id, category, fetch_date, title, abstract, authors, published_date, arxiv_url, pdf_url, tex_url)
           VALUES (
             ${e.id}, ${category}, ${today}::date,
             ${e.title}, ${e.summary}, ${e.authors},
-            ${e.published || null}, ${e.arxivUrl}, ${e.pdfUrl}
+            ${e.published || null}, ${e.arxivUrl}, ${e.pdfUrl}, ${e.texUrl}
           )
           ON CONFLICT (id, category, fetch_date) DO NOTHING
         `
